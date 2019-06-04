@@ -1,0 +1,256 @@
+<!--
+  ~ Copyright (c) 2018 Fuseinfo Inc.
+  ~
+  ~ This program is free software: you can redistribute it and/or modify
+  ~ it under the terms of the GNU Affero General Public License as
+  ~ published by the Free Software Foundation, either version 3 of the
+  ~ License, or (at your option) any later version.
+  ~
+  ~ This program is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~ GNU Affero General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Affero General Public License
+  ~ along with this program.  If not, see <https://www.gnu.org/licenses/>.
+  -->
+<!DOCTYPE html>
+<html>
+<head lang='en'>
+  <meta charset='utf-8'>
+  <meta name='viewport' content='width=device-width,initial-scale=1'>
+  <link rel="stylesheet" href="/css/bootstrap.css">
+  <style>
+    .task-remove {
+      margin-top:5px;
+      margin-bottom:5px;
+    }
+    .task-play {
+      margin-top:5px;
+      margin-bottom:5px;
+    }
+
+    .task-processor {
+      text-align: left !important;
+    }
+
+    .task-row {
+      margin-left: 5px;
+    }
+
+  </style>
+  <script type="text/javascript" src="/js/jquery-3.3.1.js"></script>
+  <script type="text/javascript" src="/js/bootstrap.js"></script>
+  <script type="text/javascript" src="/js/jsoneditor.js"></script>
+  <script type="text/javascript" src="/js/Sortable.js"></script>
+  <script type="text/javascript" src="/js/ace.js" charset="utf-8"></script>
+  <script type="text/javascript" src="/config/load"></script>
+  <script type="text/javascript">
+  JSONEditor.defaults.editors.object.options.collapsed = true;
+
+  var editorMap = {};
+
+  function createTask(name, schema, json) {
+    var id = "task_" + name;
+    var oldRecord = document.getElementById(id);
+    if (oldRecord != null) {
+      document.getElementById("simpleList").removeChild(oldRecord.parentNode);
+    }
+    $("#simpleList").append("<div class='list-group-item row task-row' data-id='" + name + "'><div id='" + id + "' class='col-xs-11 task-block'></div><span class='col-xs-1'><button class='glyphicon glyphicon-remove btn-sm btn-danger task-remove' onclick='removeTask(this);'/><button class='glyphicon glyphicon-play btn-sm btn-primary task-play' onclick='runTask(this);'/></span></div>");
+    var element = document.getElementById(id);
+    var schemaObj = JSON.parse(schema);
+    schemaObj.title = name + " @ " + schemaObj.title;
+    var editor = new JSONEditor(element, {
+      disable_edit_json: true,
+      display_required_only: true,
+      theme: 'bootstrap3',
+      schema: schemaObj
+    });
+    editor.setValue(JSON.parse(json));
+    editorMap[name] = editor;
+  }
+
+  var sortable;
+
+  function init() {
+    addItems();
+    sortable = Sortable.create(simpleList,{});
+    $("#processors").load("/config/list", function(){
+      $(".task-processor").on({click: function(){
+        var className = this.id;
+        document.getElementById('task_class').value = className;
+        document.getElementById('task_add').disabled = true;
+        document.getElementById('task_details').innerHTML = "<input id='task_name' type='text' class='form-control' placeholder='Task Name'/><button class='btn btn-primary' id='task_create' onclick='loadModal();' style='margin-top: 15px;'>Create</button>";
+      }});
+    });
+  }
+
+  function download() {
+    var form = document.createElement('form');
+    form.method = 'post';
+    form.action = '/config/download';
+    var inputField = document.createElement('input');
+    inputField.type = 'hidden';
+    inputField.name = '__list';
+    inputField.value = sortable.toArray().join('|');
+    form.appendChild(inputField);
+
+    $(".task-block").each(function() {
+      var id = this.id.substring(5);
+      inputField = document.createElement('input');
+      inputField.type = 'hidden';
+      inputField.name = id;
+      inputField.value = JSON.stringify(editorMap[id].getValue());
+      form.appendChild(inputField);
+    });
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+  }
+
+  function save() {
+    var form = document.createElement('form');
+    form.method = 'post';
+    form.action = '/config/save';
+    var inputField = document.createElement('input');
+    inputField.type = 'hidden';
+    inputField.name = '__list';
+    inputField.value = sortable.toArray().join('|');
+    form.appendChild(inputField);
+
+    $(".task-block").each(function() {
+      var id = this.id.substring(5);
+      inputField = document.createElement('input');
+      inputField.type = 'hidden';
+      inputField.name = id;
+      inputField.value = JSON.stringify(editorMap[id].getValue());
+      form.appendChild(inputField);
+    });
+    document.body.appendChild(form);
+    $.ajax({type: "POST", url: '/config/save', data: $(form).serialize()});
+    document.body.removeChild(form);
+  }
+
+  var modalSchema = "";
+  var modalEditor;
+  function loadModal() {
+    var task_class = document.getElementById('task_class').value;
+    var task_name = document.getElementById('task_name').value;
+    $.get("/config/schema/" + task_class + "/" + task_name, function(data){
+      modalSchema = data;
+      document.getElementById('task_add').disabled = false;
+      var element = document.getElementById('task_details')
+      modalEditor = new JSONEditor(element, {
+        disable_edit_json: true,
+        display_required_only: true,
+        theme: 'bootstrap3',
+        schema: JSON.parse(data)
+      });
+      $("#task_details").find(".json-editor-btn-collapse").click();
+      document.getElementById('task_name').disabled = true;
+      var task_create = document.getElementById('task_create');
+      task_create.parentNode.removeChild(task_create);
+    });
+  }
+
+  function removeTask(event) {
+    var divNode = event.parentNode.parentNode;
+    var data_id = divNode.getAttribute("data-id");
+    if (confirm("Remove Task " + data_id + "?")) {
+      delete editorMap[data_id];
+      divNode.parentNode.removeChild(divNode);
+    }
+  }
+
+  function addTask() {
+    var task_name = document.getElementById('task_name').value;
+    var json = JSON.stringify(modalEditor.getValue());
+    createTask(task_name, modalSchema, json);
+  }
+
+  function runTask(event) {
+    event.disabled = true;
+    var divNode = event.parentNode.parentNode;
+    var data_id = divNode.getAttribute("data-id");
+    var json = JSON.stringify(editorMap[data_id].getValue());
+    var data = {"json":json, "taskName":data_id};
+    $.post("/config/play",data,function(result){
+      event.disabled = false;
+      alert(result);
+    }).fail(function(result) {
+      event.disabled = false;
+      alert(result.responseText);
+    });
+  }
+
+  function uploadYaml() {
+    $.ajax({url: '/config/upload',type:'POST',data: new FormData($('form')[0]),cache: false,contentType: false,
+      processData: false,success: function (data) {
+      //eval(data);
+    }});
+  }
+
+  </script>
+  <title>Fusion Configuration</title>
+</head>
+<body onload="init();">
+<nav class="navbar navbar-default navbar-static-top">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="/"><img src="/img/fusion.png" height="32" width="32"/></a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav navbar-right">
+        <li><a href="/">Home</a></li>
+        <li><a href="/status">Status</a></li>
+        <li class="active"><a href="/config">Configuration</a></li>
+        <li><a href="/data">SQL Editor</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<div class="container">
+  <div class="row">
+    <div id="processors" class="col-lg-3">
+      &nbsp;
+    </div>
+    <div id="config" class="col-lg-9">
+      <div id="simpleList" class="list-group row"></div>
+      <div class="row">
+        <form id="form" action="/config/upload">
+          <button type="button" class="btn btn-primary" onclick="save();">Save</button>
+          <button type="button" class="btn btn-primary" onclick="download();">Download</button>
+          <div class="file btn btn-primary">
+            <input type="file" id="file" name="file" class="hidden" onchange="uploadYaml();">
+            <label for="file" style="margin-bottom:0px!important;font-weight: normal!important">Upload</label>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="task_Modal" class="modal fade" role="dialog">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">New Task</h4>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="task_class"/>
+        <div id="task_details"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="task_add" class="btn btn-primary" data-dismiss="modal" onclick="addTask();">Add</button>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!--
+  ~ Copyright (c) 2018 Fuseinfo Inc.
+  ~
+  ~ This program is free software: you can redistribute it and/or modify
+  ~ it under the terms of the GNU Affero General Public License as
+  ~ published by the Free Software Foundation, either version 3 of the
+  ~ License, or (at your option) any later version.
+  ~
+  ~ This program is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~ GNU Affero General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Affero General Public License
+  ~ along with this program.  If not, see <https://www.gnu.org/licenses/>.
+  -->
+<!DOCTYPE html>
+<html>
+  <head lang='en'>
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width,initial-scale=1'>
+    <link rel="stylesheet" type="text/css" href="/css/dataTables.bootstrap.css">
+    <link rel="stylesheet" href="/css/bootstrap.css">
+    <script type="text/javascript" src="/js/jquery-3.3.1.js"></script>
+    <script type="text/javascript" src="/js/jquery.dataTables.js"></script>
+    <script type="text/javascript" src="/js/bootstrap.js" ></script>
+    <script type="text/javascript" src="/js/dataTables.bootstrap.js"></script>
+    <title>Fusion Task Status</title>
+    <script type='text/javascript' language='javascript' class='init'>
+$(document).ready(function() {
+  $('#data').DataTable({"processing": true,"ajax":"loadStatus","pageLength":1000,"ordering": false,
+    "columnDefs": [{
+    "targets":1,
+    "orderable": false,
+    "render": function(data, type, row) {
+      var doneButton = "&nbsp;<button class=\"btn btn-success\" onclick=\"toP('" + row[0] + "');\">=&gt; Done</button>";
+      var runButton = "&nbsp;<button class=\"btn btn-primary\" onclick=\"toR('" + row[0] + "');\">=&gt; Run</button>";
+      var cancelButton = "&nbsp;<button class=\"btn btn-danger\" onclick=\"toC('" + row[0] + "');\">=&gt; Cancel</button>";
+      switch (data) {
+        case "W": return "Waiting" + runButton + doneButton;
+        case "C": return "Cancelled" + runButton + doneButton;
+        case "R": return "Running" + cancelButton;
+        case "P": return "Passed" + runButton;
+        case "F": return "Failed" + runButton + doneButton;
+        default: return data;
+      }
+    }
+  }]});
+});
+
+function toR(taskName) {
+  if (confirm('Run this task?')) {
+    $.get("/admin/setStatus/" + taskName + "?status=R", function(data, status) {
+      location.reload();
+    });
+  }
+}
+
+function toP(taskName) {
+  if (confirm('Complete this task?')) {
+    $.get("/admin/setStatus/" + taskName + "?status=P", function(data, status) {
+      location.reload();
+    });
+  }
+}
+
+function toC(taskName) {
+  if (confirm('Cancel this task?')) {
+    $.get("/admin/setStatus/" + taskName + "?status=C", function(data, status) {
+      location.reload();
+    });
+  }
+}
+    </script>
+  </head>
+  <body>
+    <nav class="navbar navbar-default navbar-static-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="/"><img src="/img/fusion.png" height="32" width="32"/></a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav navbar-right">
+            <li><a href="/">Home</a></li>
+            <li class="active"><a href="/status">Status</a></li>
+            <li><a href="/config">Configuration</a></li>
+            <li><a href="/data">SQL Editor</a></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+    <div class='container'>
+      <div class='row'>
+        <table id='data' class='table table-striped table-bordered' cellspacing='0' width='100%'>
+          <thead><tr><th>Task Name</th><th>Status</th></tr></thead>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>

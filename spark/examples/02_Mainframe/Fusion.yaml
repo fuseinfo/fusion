@@ -1,0 +1,24 @@
+---
+Start: "spark.Start"
+CUSTOMER:
+  __class: "spark.reader.MainframeReader"
+  path: "examples/mainframe"
+  copybook: |
+    ***************
+            01  CUSTOMER-RECORD.
+             05 CUSTOMER-ID            PIC 9(5) COMP-3.
+             05 CUSTOMER-NAME.
+                10 CUSTOMER-LAST-NAME  PIC X(15).
+                10 CUSTOMER-FIRST-NAME PIC X(10).
+             05 ADDRESS.
+                10 STREET-LINE         PIC X(20).
+                10 CITY                PIC X(20).
+                10 STATE               PIC X(02).
+                10 OTHER-STATE-NAME    PIC X(20).
+                10 COUNTRY             PIC X(3).
+                10 ZIP-CODE            PIC X(10).
+             05 NOTES                  PIC X(40).
+OUTPUT:
+  __class: "spark.writer.CsvWriter"
+  path: "output/02_Mainframe"
+  header: "true"

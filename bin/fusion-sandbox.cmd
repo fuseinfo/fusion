@@ -1,0 +1,1 @@
+@fusion-spark.cmd -FSpark=spark.Start -FJetty=spark.Jetty -B=Wait

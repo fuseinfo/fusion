@@ -1,0 +1,150 @@
+5.13.51.40.2Iris-setosa
+4.93  1.40.2Iris-setosa
+4.73.21.30.2Iris-setosa
+4.63.11.50.2Iris-setosa
+5  3.61.40.2Iris-setosa
+5.43.91.70.4Iris-setosa
+4.63.41.40.3Iris-setosa
+5  3.41.50.2Iris-setosa
+4.42.91.40.2Iris-setosa
+4.93.11.50.1Iris-setosa
+5.43.71.50.2Iris-setosa
+4.83.41.60.2Iris-setosa
+4.83  1.40.1Iris-setosa
+4.33  1.10.1Iris-setosa
+5.84  1.20.2Iris-setosa
+5.74.41.50.4Iris-setosa
+5.43.91.30.4Iris-setosa
+5.13.51.40.3Iris-setosa
+5.73.81.70.3Iris-setosa
+5.13.81.50.3Iris-setosa
+5.43.41.70.2Iris-setosa
+5.13.71.50.4Iris-setosa
+4.63.61  0.2Iris-setosa
+5.13.31.70.5Iris-setosa
+4.83.41.90.2Iris-setosa
+5  3  1.60.2Iris-setosa
+5  3.41.60.4Iris-setosa
+5.23.51.50.2Iris-setosa
+5.23.41.40.2Iris-setosa
+4.73.21.60.2Iris-setosa
+4.83.11.60.2Iris-setosa
+5.43.41.50.4Iris-setosa
+5.24.11.50.1Iris-setosa
+5.54.21.40.2Iris-setosa
+4.93.11.50.1Iris-setosa
+5  3.21.20.2Iris-setosa
+5.53.51.30.2Iris-setosa
+4.93.11.50.1Iris-setosa
+4.43  1.30.2Iris-setosa
+5.13.41.50.2Iris-setosa
+5  3.51.30.3Iris-setosa
+4.52.31.30.3Iris-setosa
+4.43.21.30.2Iris-setosa
+5  3.51.60.6Iris-setosa
+5.13.81.90.4Iris-setosa
+4.83  1.40.3Iris-setosa
+5.13.81.60.2Iris-setosa
+4.63.21.40.2Iris-setosa
+5.33.71.50.2Iris-setosa
+5  3.31.40.2Iris-setosa
+7  3.24.71.4Iris-versicolor
+6.43.24.51.5Iris-versicolor
+6.93.14.91.5Iris-versicolor
+5.52.34  1.3Iris-versicolor
+6.52.84.61.5Iris-versicolor
+5.72.84.51.3Iris-versicolor
+6.33.34.71.6Iris-versicolor
+4.92.43.31  Iris-versicolor
+6.62.94.61.3Iris-versicolor
+5.22.73.91.4Iris-versicolor
+5  2  3.51  Iris-versicolor
+5.93  4.21.5Iris-versicolor
+6  2.24  1  Iris-versicolor
+6.12.94.71.4Iris-versicolor
+5.62.93.61.3Iris-versicolor
+6.73.14.41.4Iris-versicolor
+5.63  4.51.5Iris-versicolor
+5.82.74.11  Iris-versicolor
+6.22.24.51.5Iris-versicolor
+5.62.53.91.1Iris-versicolor
+5.93.24.81.8Iris-versicolor
+6.12.84  1.3Iris-versicolor
+6.32.54.91.5Iris-versicolor
+6.12.84.71.2Iris-versicolor
+6.42.94.31.3Iris-versicolor
+6.63  4.41.4Iris-versicolor
+6.82.84.81.4Iris-versicolor
+6.73  5  1.7Iris-versicolor
+6  2.94.51.5Iris-versicolor
+5.72.63.51  Iris-versicolor
+5.52.43.81.1Iris-versicolor
+5.52.43.71  Iris-versicolor
+5.82.73.91.2Iris-versicolor
+6  2.75.11.6Iris-versicolor
+5.43  4.51.5Iris-versicolor
+6  3.44.51.6Iris-versicolor
+6.73.14.71.5Iris-versicolor
+6.32.34.41.3Iris-versicolor
+5.63  4.11.3Iris-versicolor
+5.52.54  1.3Iris-versicolor
+5.52.64.41.2Iris-versicolor
+6.13  4.61.4Iris-versicolor
+5.82.64  1.2Iris-versicolor
+5  2.33.31  Iris-versicolor
+5.62.74.21.3Iris-versicolor
+5.73  4.21.2Iris-versicolor
+5.72.94.21.3Iris-versicolor
+6.22.94.31.3Iris-versicolor
+5.12.53  1.1Iris-versicolor
+5.72.84.11.3Iris-versicolor
+6.33.36  2.5Iris-virginica
+5.82.75.11.9Iris-virginica
+7.13  5.92.1Iris-virginica
+6.32.95.61.8Iris-virginica
+6.53  5.82.2Iris-virginica
+7.63  6.62.1Iris-virginica
+4.92.54.51.7Iris-virginica
+7.32.96.31.8Iris-virginica
+6.72.55.81.8Iris-virginica
+7.23.66.12.5Iris-virginica
+6.53.25.12  Iris-virginica
+6.42.75.31.9Iris-virginica
+6.83  5.52.1Iris-virginica
+5.72.55  2  Iris-virginica
+5.82.85.12.4Iris-virginica
+6.43.25.32.3Iris-virginica
+6.53  5.51.8Iris-virginica
+7.73.86.72.2Iris-virginica
+7.72.66.92.3Iris-virginica
+6  2.25  1.5Iris-virginica
+6.93.25.72.3Iris-virginica
+5.62.84.92  Iris-virginica
+7.72.86.72  Iris-virginica
+6.32.74.91.8Iris-virginica
+6.73.35.72.1Iris-virginica
+7.23.26  1.8Iris-virginica
+6.22.84.81.8Iris-virginica
+6.13  4.91.8Iris-virginica
+6.42.85.62.1Iris-virginica
+7.23  5.81.6Iris-virginica
+7.42.86.11.9Iris-virginica
+7.93.86.42  Iris-virginica
+6.42.85.62.2Iris-virginica
+6.32.85.11.5Iris-virginica
+6.12.65.61.4Iris-virginica
+7.73  6.12.3Iris-virginica
+6.33.45.62.4Iris-virginica
+6.43.15.51.8Iris-virginica
+6  3  4.81.8Iris-virginica
+6.93.15.42.1Iris-virginica
+6.73.15.62.4Iris-virginica
+6.93.15.12.3Iris-virginica
+5.82.75.11.9Iris-virginica
+6.83.25.92.3Iris-virginica
+6.73.35.72.5Iris-virginica
+6.73  5.22.3Iris-virginica
+6.32.55  1.9Iris-virginica
+6.53  5.22  Iris-virginica
+6.23.45.42.3Iris-virginica
+5.93  5.11.8Iris-virginica

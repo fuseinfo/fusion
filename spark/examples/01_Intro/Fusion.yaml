@@ -1,0 +1,19 @@
+---
+Spark: "spark.Start"
+IRIS:
+  __class: "spark.reader.CsvReader"
+  path: "examples/csv"
+  header: "true"
+  inferSchema: "true"
+IRIS_GEO:
+  __class: "spark.reader.CsvReader"
+  path: "examples/extra_header_csv"
+  header: "true"
+  skipLines: "1"
+COMBINED:
+  __class: "spark.SQL"
+  sql: "SELECT A.*, alias,distribution FROM IRIS A LEFT JOIN IRIS_GEO B WHERE A.species=B.species"
+RESULT:
+  __class: "spark.writer.CsvWriter"
+  path: "output/01_INTRO"
+  header: "true"

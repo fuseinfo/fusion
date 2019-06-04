@@ -1,0 +1,9 @@
+*.class
+*.log
+.idea
+*.iml
+target
+spark-warehouse
+.fusionStaging
+tmp
+output

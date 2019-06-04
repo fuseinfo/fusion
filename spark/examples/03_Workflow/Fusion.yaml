@@ -1,0 +1,23 @@
+---
+Spark: "spark.Start"
+MONITORS:
+  __class: "spark.HadoopCopy &"
+  source: "output/03_Workflow/input"
+  target: "output/03_Workflow/raw"
+  pattern: ".*\\.csv"
+  success:
+    - __class: "ext.TaskRunner"
+      taskNames: "EXTRACT;TRANSFORM;LOAD"
+EXTRACT:
+  __class: "spark.reader.CsvReader | MONITORS &"
+  path: "${MONITORS.__target}"
+  header: "true"
+  inferSchema: "true"
+TRANSFORM:
+  __class: "spark.SQL | MONITORS&"
+  sql: "SELECT * FROM EXTRACT"
+LOAD:
+  __class: "spark.writer.ParquetWriter | MONITORS &"
+  path: "output/03_Workflow/std"
+  verifyCounts: "true"
+  filePrefix: "${MONITORS.__fileName}"
