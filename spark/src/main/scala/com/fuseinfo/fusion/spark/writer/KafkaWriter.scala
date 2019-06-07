@@ -48,7 +48,7 @@ class KafkaWriter(taskName:String, params:java.util.Map[String, AnyRef]) extends
     val enrichedParams = params.filter(_._2.isInstanceOf[String])
       .mapValues(v => VarUtils.enrichString(v.toString, vars))
     val topic = enrichedParams("topic")
-    val kafkaProps = enrichedParams.filter(_._1.startsWith("kafka_")).map(kv => kv._1.substring(6).replace('_','.') -> kv._2) ++
+    val kafkaProps = enrichedParams.filter(_._1.startsWith("kafka.")).map(kv => kv._1.substring(6) -> kv._2) ++
       Map("key.serializer" -> "org.apache.kafka.common.serialization.ByteArraySerializer",
         "value.serializer" -> "org.apache.kafka.common.serialization.ByteArraySerializer")
     val spark = SparkSession.getActiveSession.getOrElse(SparkSession.getDefaultSession.get)
@@ -178,15 +178,16 @@ class KafkaWriter(taskName:String, params:java.util.Map[String, AnyRef]) extends
   override def getProcessorSchema:String = """{"title": "KafkaWriter","type":"object","properties": {
     "__class":{"type":"string","options":{"hidden":true},"default":"spark.writer.KafkaWriter"},
     "topic":{"type":"string","description":"Kafka topic"},
-    "kafka_bootstrap_servers":{"type":"string","description":"Kafka bootstrap servers"},
-    "kafka_schema_registry_url":{"type":"string","description":"Kafka schema registry url"},
+    "kafka.bootstrap.servers":{"type":"string","description":"Kafka bootstrap servers"},
+    "kafka.schema.registry.url":{"type":"string","description":"Kafka schema registry url"},
+    "sql":{"type":"string","description":"SQL query"},
     "table":{"type":"string","description":"Table name"},
     "keyColumn":{"type":"string","description":"Key column"},
-    "coalesce":{"type":"string","format":"number","description":"Number of partition to coalesce"},
+    "coalesce":{"type":"string","format":"number","description":"Number of partitions to coalesce"},
     "repartition":{"type":"string","format":"number","description":"Number of partitions"},
     "onSuccess":{"type":"array","format":"tabs","description":"extension after success",
       "items":{"type":"object","properties":{"__class":{"type":"string"}}}},
     "onFailure":{"type":"array","format":"tabs","description":"extension after failure",
       "items":{"type":"object","properties":{"__class":{"type":"string"}}}}
-    },"required":["__class","topic","kafka_bootstrap_servers"]}"""
+    },"required":["__class","topic","kafka.bootstrap.servers"]}"""
 }

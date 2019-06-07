@@ -42,7 +42,7 @@ class Jetty(taskName:String, params:java.util.Map[String, AnyRef]) extends Fusio
   override def apply(vars: java.util.Map[String, String]): String = {
 
     val enrichedParams = params.filter(_._2.isInstanceOf[String])
-      .map(kv => kv._1.replace('_','.') -> VarUtils.enrichString(kv._2.toString, vars))
+      .mapValues(v => VarUtils.enrichString(v.toString, vars))
     params.get("trustStore") match {
       case store:String => System.setProperty("javax.net.ssl.trustStore", store)
       case _ =>

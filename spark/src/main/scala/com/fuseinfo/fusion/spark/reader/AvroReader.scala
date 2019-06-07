@@ -50,7 +50,7 @@ class AvroReader(taskName: String, params:java.util.Map[String, AnyRef]) extends
     "__class":{"type":"string","options":{"hidden":true},"default":"spark.reader.AvroReader"},
     "path":{"type":"string","description":"Path of the avro files"},
     "repartition":{"type":"string","format":"number","description":"Number of partitions"},
-    "cache":{"type":"boolean","description":"cache the DataFrame?"}
+    "cache":{"type":"string","description":"cache the DataFrame?"}
     },"required":["__class","path"]}"""
 }
 

@@ -50,7 +50,7 @@ class KafkaReader(taskName:String, params:java.util.Map[String, AnyRef]) extends
       .mapValues(v => VarUtils.enrichString(v.toString, vars))
     val spark = SparkSession.getActiveSession.getOrElse(SparkSession.getDefaultSession.get)
     val kafkaParams = new java.util.HashMap[String, AnyRef]
-    enrichedParams.filter(_._1.startsWith("kafka_")).foreach(kv => kafkaParams.put(kv._1.substring(6).replace('_','.'), kv._2))
+    enrichedParams.filter(_._1.startsWith("kafka.")).foreach(kv => kafkaParams.put(kv._1.substring(6), kv._2))
     kafkaParams.put("key.deserializer","org.apache.kafka.common.serialization.ByteArrayDeserializer")
     kafkaParams.put("value.deserializer","org.apache.kafka.common.serialization.ByteArrayDeserializer")
     val topic = enrichedParams("topic")
@@ -153,13 +153,13 @@ class KafkaReader(taskName:String, params:java.util.Map[String, AnyRef]) extends
   override def getProcessorSchema:String = """{"title": "KafkaReader","type": "object","properties": {
     "__class":{"type":"string","options":{"hidden":true},"default":"spark.reader.KafkaReader"},
     "topic":{"type":"string","description":"Kafka topic"},
-    "kafka_bootstrap_servers":{"type":"string","description":"Kafka bootstrap servers"},
-    "kafka_group_id":{"type":"string","description":"Group ID"},
-    "kafka_schema_registry_url":{"type":"string","description":"Schema registry url"},
+    "kafka.bootstrap.servers":{"type":"string","description":"Kafka bootstrap servers"},
+    "kafka.group.id":{"type":"string","description":"Group ID"},
+    "kafka.schema.registry.url":{"type":"string","description":"Schema registry url"},
     "schema":{"type":"string","description":"Schema"},
     "ranges":{"type":"string","description":"List of ranges"},
     "offsets":{"type":"string","description":"List of offsets"},
     "repartition":{"type":"string","format":"number","description":"Number of partitions"},
     "cache":{"type":"boolean","description":"cache the DataFrame?"}
-    },"required":["__class","topic","kafka_bootstrap_servers","kafka_group_id"]}"""
+    },"required":["__class","topic","kafka.bootstrap.servers","kafka.group.id"]}"""
 }

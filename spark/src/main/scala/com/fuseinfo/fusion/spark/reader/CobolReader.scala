@@ -53,16 +53,16 @@ class CobolReader(taskName:String, params:java.util.Map[String, AnyRef]) extends
     "__class":{"type":"string","options":{"hidden":true},"default":"spark.reader.CobolReader"},
     "path":{"type":"string","description":"Path of the COBOL files"},
     "copybook":{"type":"string","description":"COBOL Copybook"},
-    "bookname":{"type":"string","description":"COBOL Copybook"},
-    "font":{"type":"string","description":"COBOL Copybook"},
+    "bookname":{"type":"string","description":"The common prefix of field names to be ignored"},
     "recordformat":{"type":"string","description":"Record format of the file: F, V, FB, VB"},
-    "copybookformat":{"type":"string","format":"number","description":"COBOL Copybook format:"},
-    "binaryformat":{"type":"string","format":"number","description":"COBOL Copybook format:"},
-    "tree":{"type":"string","format":"number","description":"COBOL Copybook format:"},
-    "nullvalue":{"type":"string","description":"COBOL Copybook"},
-    "emptyvalue":{"type":"string","description":"COBOL Copybook"},
-    "number":{"type":"string","format":"number","description":"COBOL Copybook format:"},
+    "binaryformat":{"type":"string","format":"number","description":"Binary format: 0 - Intel; 2 - Mainframe"},
+    "font":{"type":"string","description":"code page"},
+    "copybookformat":{"type":"string","format":"number","description":"COBOL Copybook format"},
+    "emptyvalue":{"type":"string","description":"use this string when empty is found},
+    "nullvalue":{"type":"string","description":"use this string when null is found"},
+    "number":{"type":"string","format":"number","description":"How to cast numbers: decimal, double, string, mixed"},
+    "tree":{"type":"string","format":"number","description":"Whether use tree/nested format"},
     "repartition":{"type":"integer","description":"Number of partitions"},
-    "cache":{"type":"boolean","description":"cache the DataFrame?"}
+    "cache":{"type":"string","description":"cache the DataFrame?"}
     },"required":["__class","path","copybook"]}"""
 }

@@ -80,8 +80,9 @@ class CsvReader(taskName:String, params:java.util.Map[String, AnyRef]) extends F
         Some(conf)
       case _ =>
         enrichedParams.get("skipLines") match {
-          case Some(skipLines) => Some(new Configuration(spark.sparkContext.hadoopConfiguration))
           case None => None
+          case Some("0") => None
+          case Some(skipLines) => Some(new Configuration(spark.sparkContext.hadoopConfiguration))
         }
     }
     val df = confOption match {
@@ -254,6 +255,6 @@ class CsvReader(taskName:String, params:java.util.Map[String, AnyRef]) extends F
     "ignoreTrailingWhiteSpace":{"type":"boolean","description":"Ignore trailing white space"},
     "columnNameOfCorruptRecord":{"type":"string","description":"Column name of corrupt record"},
     "repartition":{"type":"string","format":"number","description":"Number of partitions"},
-    "cache":{"type":"boolean","description":"cache the DataFrame?"}
+    "cache":{"type":"string","description":"cache the DataFrame?"}
     },"required":["__class","path"]}"""
 }

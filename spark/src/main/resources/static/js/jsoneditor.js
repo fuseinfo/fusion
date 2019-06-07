@@ -1188,7 +1188,7 @@ JSONEditor.Validator = Class.extend({
             // If this item has a specific schema tied to it
             // Validate against it
             if(schema.items[i]) {
-              errors = errors.concat(this._validateSchema(schema.items[i],value[i],path+'.'+i));
+              errors = errors.concat(this._validateSchema(schema.items[i],value[i],path+';'+i));
             }
             // If all additional items are allowed
             else if(schema.additionalItems === true) {
@@ -1197,7 +1197,7 @@ JSONEditor.Validator = Class.extend({
             // If additional items is a schema
             // TODO: Incompatibility between version 3 and 4 of the spec
             else if(schema.additionalItems) {
-              errors = errors.concat(this._validateSchema(schema.additionalItems,value[i],path+'.'+i));
+              errors = errors.concat(this._validateSchema(schema.additionalItems,value[i],path+';'+i));
             }
             // If no additional items are allowed
             else if(schema.additionalItems === false) {
@@ -1218,7 +1218,7 @@ JSONEditor.Validator = Class.extend({
         else {
           // Each item in the array must validate against the schema
           for(i=0; i<value.length; i++) {
-            errors = errors.concat(this._validateSchema(schema.items,value[i],path+'.'+i));
+            errors = errors.concat(this._validateSchema(schema.items,value[i],path+';'+i));
           }
         }
       }
@@ -1314,7 +1314,7 @@ JSONEditor.Validator = Class.extend({
       for(i in schema.properties) {
         if(!schema.properties.hasOwnProperty(i)) continue;
         validated_properties[i] = true;
-        errors = errors.concat(this._validateSchema(schema.properties[i],value[i],path+'.'+i));
+        errors = errors.concat(this._validateSchema(schema.properties[i],value[i],path+';'+i));
       }
 
       // `patternProperties`
@@ -1328,7 +1328,7 @@ JSONEditor.Validator = Class.extend({
             if(!value.hasOwnProperty(j)) continue;
             if(regex.test(j)) {
               validated_properties[j] = true;
-              errors = errors.concat(this._validateSchema(schema.patternProperties[i],value[j],path+'.'+j));
+              errors = errors.concat(this._validateSchema(schema.patternProperties[i],value[j],path+';'+j));
             }
           }
         }
@@ -1360,7 +1360,7 @@ JSONEditor.Validator = Class.extend({
             // Must match schema
             // TODO: incompatibility between version 3 and 4 of the spec
             else {
-              errors = errors.concat(this._validateSchema(schema.additionalProperties,value[i],path+'.'+i));
+              errors = errors.concat(this._validateSchema(schema.additionalProperties,value[i],path+';'+i));
             }
           }
         }
@@ -1552,7 +1552,7 @@ JSONEditor.AbstractEditor = Class.extend({
     this.path = options.path || 'root';
     this.formname = options.formname || this.path.replace(/\.([^.]+)/g,'[$1]');
     if(this.jsoneditor.options.form_name_root) this.formname = this.formname.replace(/^root\[/,this.jsoneditor.options.form_name_root+'[');
-    this.key = this.path.split('.').pop();
+    this.key = this.path.split(';').pop();
     this.parent = options.parent;
     
     this.link_watchers = [];
@@ -1569,9 +1569,9 @@ JSONEditor.AbstractEditor = Class.extend({
     
     var self = this;
     Object.keys(deps).forEach(function(dependency) {
-      var path = self.path.split('.');
+      var path = self.path.split(';');
       path[path.length - 1] = dependency;
-      path = path.join('.');
+      path = path.join(';');
       var choices = deps[dependency];
       self.jsoneditor.watch(path, function() {
         self.checkDependency(path, choices);
@@ -1678,10 +1678,10 @@ JSONEditor.AbstractEditor = Class.extend({
 
         if(Array.isArray(path)) {
           if(path.length<2) continue;
-          path_parts = [path[0]].concat(path[1].split('.'));
+          path_parts = [path[0]].concat(path[1].split(';'));
         }
         else {
-          path_parts = path.split('.');
+          path_parts = path.split(';');
           if(!self.theme.closest(self.container,'[data-schemaid="'+path_parts[0]+'"]')) path_parts.unshift('#');
         }
         first = path_parts.shift();
@@ -1693,7 +1693,7 @@ JSONEditor.AbstractEditor = Class.extend({
         if(!root) throw "Could not find ancestor node with id "+first;
 
         // Keep track of the root node and path for use when rendering the template
-        adjusted_path = root.getAttribute('data-schemapath') + '.' + path_parts.join('.');
+        adjusted_path = root.getAttribute('data-schemapath') + ';' + path_parts.join(';');
         
         self.jsoneditor.watch(adjusted_path,self.watch_listener);
         
@@ -3229,7 +3229,7 @@ JSONEditor.defaults.editors.object = JSONEditor.AbstractEditor.extend({
         self.editors[key] = self.jsoneditor.createEditor(editor,{
           jsoneditor: self.jsoneditor,
           schema: schema,
-          path: self.path+'.'+key,
+          path: self.path+';'+key,
           parent: self,
           compact: true,
           required: true
@@ -3837,7 +3837,7 @@ JSONEditor.defaults.editors.object = JSONEditor.AbstractEditor.extend({
       self.editors[name] = self.jsoneditor.createEditor(editor,{
         jsoneditor: self.jsoneditor,
         schema: schema,
-        path: self.path+'.'+name,
+        path: self.path+';'+name,
         parent: self
       });
       self.editors[name].preBuild();
@@ -4306,7 +4306,7 @@ JSONEditor.defaults.editors.array = JSONEditor.AbstractEditor.extend({
       else {
         holder = this.theme.getTabContent();
       }
-      holder.id = this.path+'.'+i;
+      holder.id = this.path+';'+i;
     }
     else if(item_info.child_editors) {
       holder = this.theme.getChildEditorHolder();
@@ -4321,7 +4321,7 @@ JSONEditor.defaults.editors.array = JSONEditor.AbstractEditor.extend({
       jsoneditor: this.jsoneditor,
       schema: schema,
       container: holder,
-      path: this.path+'.'+i,
+      path: this.path+';'+i,
       parent: this,
       required: true
     });
@@ -5002,7 +5002,7 @@ JSONEditor.defaults.editors.table = JSONEditor.defaults.editors.array.extend({
       jsoneditor: this.jsoneditor,
       schema: schema_copy,
       container: holder,
-      path: this.path+'.'+i,
+      path: this.path+';'+i,
       parent: this,
       compact: true,
       table_row: true
@@ -5641,7 +5641,7 @@ JSONEditor.defaults.editors.multiple = JSONEditor.AbstractEditor.extend({
       var check_part = this.oneOf? 'oneOf' : 'anyOf';
       $each(this.editors,function(i,editor) {
         if(!editor) return;
-        var check = self.path+'.'+check_part+'['+i+']';
+        var check = self.path+';'+check_part+'['+i+']';
         var new_errors = [];
         $each(errors, function(j,error) {
           if(error.path.substr(0,check.length)===check) {

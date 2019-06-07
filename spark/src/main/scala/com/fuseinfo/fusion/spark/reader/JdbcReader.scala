@@ -66,13 +66,13 @@ class JdbcReader(taskName:String, params:java.util.Map[String, AnyRef]) extends 
     "table":{"type":"string","description":"The table or SQL query to be loaded"},
     "user":{"type":"string","description":"The JDBC user"},
     "password":{"type":"string","format":"password","description":"The password of the JDBC user"},
-    "partitionColumn":{"type":"string","description":"Provide a numeric column/expression to partition of JDBC connection"},
-    "lowerBound":{"type":"string","format":"number","description":"The lower Bound value of the parttion column"},
-    "upperBound":{"type":"string","format":"number","description":"The upper Bound value of the parttion column"},
-    "numPartitions":{"type":"string","format":"number","description":"The number of partition"},
-    "fetchsize":{"type":"string","format":"number","description":"Number of record to be fetch at a time"},
     "where":{"type":"string","description":"Add a WHERE clause to the table/SQL query"},
+    "partitionColumn":{"type":"string","description":"Provide a numeric column/expression to partition of JDBC connection"},
+    "lowerBound":{"type":"string","format":"number","description":"The lower Bound value of the partition column"},
+    "upperBound":{"type":"string","format":"number","description":"The upper Bound value of the partition column"},
+    "numPartitions":{"type":"string","format":"number","description":"The number of partitions"},
+    "fetchsize":{"type":"string","format":"number","description":"Number of record to be fetch at a time"},
     "repartition":{"type":"string","format":"number","description":"Number of partitions"},
-    "cache":{"type":"boolean","description":"cache the DataFrame?"}
+    "cache":{"type":"string","description":"cache the DataFrame?"}
     },"required":["__class","url","driver","table"]}"""
 }

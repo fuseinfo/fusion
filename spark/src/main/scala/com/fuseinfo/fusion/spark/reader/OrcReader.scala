@@ -49,6 +49,6 @@ class OrcReader(taskName:String, params:java.util.Map[String, AnyRef]) extends F
     "__class":{"type":"string","options":{"hidden":true},"default":"spark.reader.OrcReader"},
     "path":{"type":"string","description":"Path of the orc files"},
     "repartition":{"type":"string","format":"number","description":"Number of partitions"},
-    "cache":{"type":"boolean","description":"cache the DataFrame?"}
+    "cache":{"type":"string","description":"cache the DataFrame?"}
     },"required":["__class","path"]}"""
 }
