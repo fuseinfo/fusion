@@ -91,16 +91,26 @@ public class VarUtils {
         if (sb != null) sb.append(cs, pos, end);
     }
 
+    private static String getVar(String varName, Map<String, String> vars) {
+        final String result = vars.get(varName);
+        if (result == null) {
+            String env = System.getenv(varName);
+            return env == null? "" : env;
+        } else {
+            return result;
+        }
+    }
+
     private static int processVar(String str, int pos, StringBuilder sb, Map<String, String> vars) {
         for (int i = pos; i < str.length(); i++) {
             if (str.charAt(i) == '}') {
-                append(sb, vars.getOrDefault(str.substring(pos, i), ""));
+                append(sb, getVar(str.substring(pos, i), vars));
                 return i + 1;
             } else if (str.charAt(i) == ':' && i < str.length() - 1 && str.charAt(i + 1) == '-') {
                 String varName = str.substring(pos, i);
                 StringBuilder varSB;
                 if (vars.containsKey(varName) || sb == null) {
-                    append(sb, vars.getOrDefault(varName, ""));
+                    append(sb, getVar(varName, vars));
                     varSB = null;
                 } else varSB = new StringBuilder();
                 int next = i + 2;
