@@ -137,6 +137,7 @@ class ConfigHandler extends FusionHandler {
     try {
       val params = ConfUtils.jsonToMap(objNode)
       Fusion.removeTask(taskName)
+      Fusion.addTask(taskName, objNode)
       Fusion.runWithDependency(taskName, action, params)
       assert(Fusion.getTaskStatus(taskName) == 'P')
       response.setStatus(HttpServletResponse.SC_OK)

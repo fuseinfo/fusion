@@ -68,6 +68,7 @@
     });
     editor.setValue(JSON.parse(json));
     editorMap[name] = editor;
+    return editor;
   }
 
   var sortable;
@@ -80,6 +81,7 @@
         var className = this.id;
         document.getElementById('task_class').value = className;
         document.getElementById('task_add').disabled = true;
+        document.getElementById('task_run').disabled = true;
         document.getElementById('task_details').innerHTML = "<input id='task_name' type='text' class='form-control' placeholder='Task Name'/><button class='btn btn-primary' id='task_create' onclick='loadModal();' style='margin-top: 15px;'>Create</button>";
       }});
     });
@@ -139,6 +141,7 @@
     $.get("/config/schema/" + task_class + "/" + task_name, function(data){
       modalSchema = data;
       document.getElementById('task_add').disabled = false;
+      document.getElementById('task_run').disabled = false;
       var element = document.getElementById('task_details')
       modalEditor = new JSONEditor(element, {
         disable_edit_json: true,
@@ -166,6 +169,18 @@
     var task_name = document.getElementById('task_name').value;
     var json = JSON.stringify(modalEditor.getValue());
     createTask(task_name, modalSchema, json);
+  }
+
+  function addRunTask() {
+    var task_name = document.getElementById('task_name').value;
+    var editor = createTask(task_name, modalSchema, JSON.stringify(modalEditor.getValue()));
+    var json = JSON.stringify(editor.getValue());
+    var data = {"json":json, "taskName":task_name};
+    $.post("/config/play",data,function(result){
+      alert(result);
+    }).fail(function(result) {
+      alert(result.responseText);
+    });
   }
 
   function runTask(event) {
@@ -248,6 +263,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" id="task_add" class="btn btn-primary" data-dismiss="modal" onclick="addTask();">Add</button>
+        <button type="button" id="task_run" class="btn btn-primary" data-dismiss="modal" onclick="addRunTask();">Run</button>
       </div>
     </div>
   </div>

@@ -58,7 +58,7 @@
 
 <div class="container">
   <div style="margin-bottom:20px">
-    <button onclick="window.open('/data/run?sql=' + getSQL(), '_blank');" class="btn btn-success">Run</button>
+    <button onclick="readSQL();" class="btn btn-success">Run</button>
     <button type="button" class="btn btn-primary">Save</button>
     <button type="button" class="btn btn-primary">Download</button>
     <button type="button" class="btn btn-info" onclick="size += 2;editor.setFontSize(size);">Larger</button>
@@ -77,6 +77,39 @@ function getSQL() {
   var sql = editor.getSelectedText();
   if (sql == null || sql.length == 0) sql = editor.getValue();
   return encodeURI(sql);
+}
+
+function runSQL(sqlText) {
+  window.open('/data/run?sql=' + encodeURI(sqlText), '_blank');
+}
+
+function readSQL() {
+  var text = editor.getSelectedText();
+  if (text == null || text.length == 0) text = editor.getValue();
+  var lines = text.split(/\r?\n/);
+  var length = lines.length;
+  var sql = "";
+  for (var i = 0; i < length; i++) {
+    var trimmed = lines[i].trim();
+    if (trimmed.length > 0 && !trimmed.startsWith("--")) {
+      if (trimmed.endsWith(";")) {
+        if (trimmed.length > 1) {
+          sql += "\n" + trimmed.slice(0, -1);
+        }
+        if (sql.trim().length > 0) {
+          runSQL(sql);
+          sql = "";
+        }
+      } else {
+        if (trimmed.length > 0) {
+          sql += "\n" + trimmed;
+        }
+      }
+    }
+  }
+  if (sql.length > 0) {
+    runSQL(sql);
+  }
 }
 </script>
 </body>

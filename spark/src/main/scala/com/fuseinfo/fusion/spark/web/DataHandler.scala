@@ -94,7 +94,8 @@ class DataHandler extends FusionHandler {
             case e:Throwable =>
               e.printStackTrace()
               response.setContentType("text/html")
-              """<html><body><script type='text/javascript'>
+              s"""<html><body><script type='text/javascript'>
+              alert("${e.getMessage.replace('"',''')}");
             setTimeout('self.close()',100);
             </script></body></html>"""
           }
