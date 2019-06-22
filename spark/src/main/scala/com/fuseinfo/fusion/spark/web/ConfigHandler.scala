@@ -16,6 +16,7 @@
  */
 package com.fuseinfo.fusion.spark.web
 
+import java.io.{File, FilenameFilter}
 import java.util.regex.Pattern
 
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -85,6 +86,20 @@ class ConfigHandler extends FusionHandler {
           list.map { case (className, clazz) => s"<span class='btn btn-info task-processor col-lg-12' id='${clazz.getCanonicalName}' data-toggle='modal' data-target='#task_Modal'>$className</span>" }.mkString("") +
           "</div>"
       }.mkString(""))
+    val procUrl = getClass.getClassLoader.getResource("processors")
+    if (procUrl != null) {
+      val fileList = new File(procUrl.getFile).list(new FilenameFilter(){
+        override def accept(dir:File, name:String):Boolean = name.endsWith(".json")
+      })
+      if (fileList.nonEmpty) {
+        writer.write("<button class='btn btn-primary btn-block' data-toggle='collapse' data-target='#userProcessor'>User Processors</button><div id='userProcessor' class='collapse'>")
+        fileList.foreach { fileName =>
+          val name = fileName.substring(0, fileName.length - 5)
+          writer.write(s"<span class='btn btn-info task-processor col-lg-12' id='_$name' data-toggle='modal' data-target='#task_Modal'>$name</span>")
+        }
+        writer.write("</div>")
+      }
+    }
     response.setStatus(HttpServletResponse.SC_OK)
     true
   }
@@ -94,9 +109,11 @@ class ConfigHandler extends FusionHandler {
     val idx = suffix.indexOf('/', begin)
     val className = suffix.substring(begin, idx)
     val taskName = suffix.substring(idx + 1)
-    val schema = Class.forName(className).getDeclaredConstructor(classOf[String]).newInstance(taskName)
-      .asInstanceOf[FusionFunction].getProcessorSchema
     response.setContentType("application/text")
+    val schema = if (className.charAt(0) == '_')
+      scala.io.Source.fromInputStream(getClass.getClassLoader.getResourceAsStream("processors/" + className.substring(1) + ".json")).mkString
+    else Class.forName(className).getDeclaredConstructor(classOf[String]).newInstance(taskName)
+      .asInstanceOf[FusionFunction].getProcessorSchema
     response.getWriter.write(schema)
     true
   }

@@ -47,7 +47,7 @@ class ParquetReader(taskName:String, params:java.util.Map[String, AnyRef]) exten
 
   override def getProcessorSchema:String = """{"title": "ParquetReader","type": "object","properties": {
     "__class":{"type":"string","options":{"hidden":true},"default":"spark.reader.ParquetReader"},
-    "path":{"type":"string","description":"Path of the avro files"},
+    "path":{"type":"string","description":"Path of the Parquet files"},
     "repartition":{"type":"integer","description":"Number of partitions"},
     "cache":{"type":"string","description":"cache to memory"}
     },"required":["__class","path"]}"""
