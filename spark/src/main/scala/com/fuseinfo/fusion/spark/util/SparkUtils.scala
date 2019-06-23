@@ -32,4 +32,15 @@ object SparkUtils {
     }
     df2.createOrReplaceTempView(tableName.toUpperCase)
   }
+
+  def stdPath(path: String): String = {
+    if (path.length > 1 && path.charAt(0) == '\\') {
+      path.replace("\\", "/")
+    } else if (path.length > 3 && path.charAt(1) == ':' && path.charAt(2) == '\\') {
+      val drive = path.charAt(0)
+      if ((drive >= 'A' && drive <= 'Z' ) || (drive >= 'a' && drive <= 'z')) {
+        path.replace("\\", "/")
+      } else path
+    } else path
+  }
 }

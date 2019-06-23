@@ -37,7 +37,7 @@ class OrcReader(taskName:String, params:java.util.Map[String, AnyRef]) extends F
   override def apply(vars:java.util.Map[String, String]): String = {
     val enrichedParams = params.filter(_._2.isInstanceOf[String])
       .mapValues(v => VarUtils.enrichString(v.toString, vars))
-    val path = enrichedParams("path")
+    val path = SparkUtils.stdPath(enrichedParams("path"))
     val spark=SparkSession.getActiveSession.getOrElse(SparkSession.getDefaultSession.get)
     logger.info("{} Reading ORC file from {}", taskName, path:Any)
     val df = spark.read.orc(path)

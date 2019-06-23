@@ -37,7 +37,7 @@ class ParquetReader(taskName:String, params:java.util.Map[String, AnyRef]) exten
   override def apply(vars:java.util.Map[String, String]): String = {
     val enrichedParams = params.filter(_._2.isInstanceOf[String])
       .mapValues(v => VarUtils.enrichString(v.toString, vars))
-    val path = enrichedParams("path")
+    val path = SparkUtils.stdPath(enrichedParams("path"))
     val spark = SparkSession.getActiveSession.getOrElse(SparkSession.getDefaultSession.get)
     logger.info("{} Reading Parquet file from {}", taskName, path:Any)
     val df = spark.read.parquet(path)

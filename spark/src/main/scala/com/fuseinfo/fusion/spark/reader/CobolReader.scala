@@ -39,7 +39,7 @@ class CobolReader(taskName:String, params:java.util.Map[String, AnyRef]) extends
   override def apply(vars:java.util.Map[String, String]): String = {
     val enrichedParams = params.filter(_._2.isInstanceOf[String])
       .mapValues(v => VarUtils.enrichString(v.toString, vars))
-    val path = enrichedParams("path")
+    val path = SparkUtils.stdPath(enrichedParams("path"))
     val spark = SparkSession.getActiveSession.getOrElse(SparkSession.getDefaultSession.get)
     logger.info("{} Reading mainframe file from {}", taskName, path:Any)
     val reader = spark.read.format("com.fuseinfo.spark.sql.sources.v2.cobol")

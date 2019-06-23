@@ -41,7 +41,7 @@ class ExcelReader (taskName:String, params:java.util.Map[String, AnyRef]) extend
   override def apply(vars: util.Map[String, String]): String = {
     val enrichedParams = params.filter(_._2.isInstanceOf[String])
       .mapValues(v => VarUtils.enrichString(v.toString, vars))
-    val path = enrichedParams("path")
+    val path = SparkUtils.stdPath(enrichedParams("path"))
     logger.info("{} Reading Excel from {}", taskName, path:Any)
     val spark = SparkSession.getActiveSession.getOrElse(SparkSession.getDefaultSession.get)
     val reader = spark.read.format("com.fuseinfo.spark.sql.sources.v2.excel")

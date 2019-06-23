@@ -17,6 +17,8 @@
 package com.fuseinfo.fusion.spark.web
 
 import java.io.{File, FilenameFilter}
+import java.nio.file.{FileSystems, Files, Paths}
+import java.util.Collections
 import java.util.regex.Pattern
 
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -86,17 +88,24 @@ class ConfigHandler extends FusionHandler {
           list.map { case (className, clazz) => s"<span class='btn btn-info task-processor col-lg-12' id='${clazz.getCanonicalName}' data-toggle='modal' data-target='#task_Modal'>$className</span>" }.mkString("") +
           "</div>"
       }.mkString(""))
-    val procUrl = getClass.getClassLoader.getResource("processors")
+    val procUrl = getClass.getResource("/processors")
     if (procUrl != null) {
-      val fileList = new File(procUrl.getFile).list(new FilenameFilter(){
-        override def accept(dir:File, name:String):Boolean = name.endsWith(".json")
-      })
-      if (fileList.nonEmpty) {
-        writer.write("<button class='btn btn-primary btn-block' data-toggle='collapse' data-target='#userProcessor'>User Processors</button><div id='userProcessor' class='collapse'>")
-        fileList.foreach { fileName =>
+      val procUri = procUrl.toURI
+      val path = if (procUri.getScheme != "jar") Paths.get(procUri)
+      else FileSystems.newFileSystem(procUri, Collections.emptyMap[String, AnyRef]).getPath("/processors")
+      val iterator = Files.walk(path, 1).iterator
+      val sb = new StringBuilder
+      while (iterator.hasNext) {
+        val pt = iterator.next
+        val fileName = pt.getName(pt.getNameCount - 1).toString
+        if (fileName.endsWith(".json")) {
           val name = fileName.substring(0, fileName.length - 5)
-          writer.write(s"<span class='btn btn-info task-processor col-lg-12' id='_$name' data-toggle='modal' data-target='#task_Modal'>$name</span>")
+          sb.append(s"<span class='btn btn-info task-processor col-lg-12' id='_$name' data-toggle='modal' data-target='#task_Modal'>$name</span>")
         }
+      }
+      if (sb.nonEmpty) {
+        writer.write("<button class='btn btn-primary btn-block' data-toggle='collapse' data-target='#userProcessor'>User Processors</button><div id='userProcessor' class='collapse'>")
+        writer.write(sb.toString)
         writer.write("</div>")
       }
     }

@@ -67,7 +67,7 @@ class CsvReader(taskName:String, params:java.util.Map[String, AnyRef]) extends F
 
     val enrichedParams = params.filter(_._2.isInstanceOf[String])
       .mapValues(v => VarUtils.enrichString(v.toString, vars))
-    val path = enrichedParams("path")
+    val path = SparkUtils.stdPath(enrichedParams("path"))
     val spark = SparkSession.getActiveSession.getOrElse(SparkSession.getDefaultSession.get)
 
     val headerFlag = enrichedParams.getOrElse("header", "false").toBoolean

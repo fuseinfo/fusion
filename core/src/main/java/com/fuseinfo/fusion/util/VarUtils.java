@@ -25,12 +25,17 @@ import java.util.concurrent.ConcurrentHashMap;
 public class VarUtils {
     private final static ConcurrentHashMap<String, Function1<String, String>> cmdMap = new ConcurrentHashMap<>();
 
+    private static void appendSpecial(StringBuilder sb, char c) {
+        if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) sb.append('\\');
+        sb.append(c);
+    }
+
     public static String enrichString(String str, Map<String, String> vars) {
         StringBuilder sb = new StringBuilder();
         int next = 0;
         for (int i = 0; i < str.length(); i++) {
             if (str.charAt(i) == '\\' && i < str.length() - 1) {
-                sb.append(str, next, i).append(str.charAt(++i));
+                appendSpecial(sb.append(str, next, i), str.charAt(++i));
                 next = i + 1;
                 continue;
             }
@@ -57,7 +62,7 @@ public class VarUtils {
         int next = pos;
         for (int i = pos; i < str.length(); i++) {
             if (str.charAt(i) == '\\' && i < str.length() - 1) {
-                cmdSB.append(str, next, i).append(str.charAt(++i));
+                appendSpecial(cmdSB.append(str, next, i), str.charAt(++i));
                 next = i + 1;
                 continue;
             }
@@ -116,7 +121,7 @@ public class VarUtils {
                 int next = i + 2;
                 for (i = next; i < str.length(); i++) {
                     if (str.charAt(i) == '\\' && i < str.length() - 1) {
-                        varSB.append(str, next, i).append(str.charAt(++i));
+                        appendSpecial(varSB.append(str, next, i), str.charAt(++i));
                         next = i + 1;
                         continue;
                     }

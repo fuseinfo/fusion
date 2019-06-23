@@ -42,7 +42,7 @@ class FixedLengthReader(taskName:String, params:java.util.Map[String, AnyRef]) e
   override def apply(vars: java.util.Map[String, String]): String = {
     val enrichedParams = params.filter(_._2.isInstanceOf[String])
       .mapValues(v => VarUtils.enrichString(v.toString, vars))
-    val path = enrichedParams("path")
+    val path = SparkUtils.stdPath(enrichedParams("path"))
     val spark = SparkSession.getActiveSession.getOrElse(SparkSession.getDefaultSession.get)
     val fields = params.get("fields").toString.split("\\,")
     var lastBgn = params.getOrElse("length", "-1").toString.toInt

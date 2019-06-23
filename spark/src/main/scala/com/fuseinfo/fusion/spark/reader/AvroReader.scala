@@ -38,7 +38,7 @@ class AvroReader(taskName: String, params:java.util.Map[String, AnyRef]) extends
   override def apply(vars:java.util.Map[String, String]): String = {
     val enrichedParams = params.filter(_._2.isInstanceOf[String])
       .mapValues(v => VarUtils.enrichString(v.toString, vars))
-    val path = enrichedParams("path")
+    val path = SparkUtils.stdPath(enrichedParams("path"))
     logger.info("{} Reading AVRO from {}", taskName, path:Any)
     val spark = SparkSession.getActiveSession.getOrElse(SparkSession.getDefaultSession.get)
     val df = spark.read.avro(path)
