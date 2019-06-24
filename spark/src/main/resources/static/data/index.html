@@ -59,8 +59,8 @@
 <div class="container">
   <div style="margin-bottom:20px">
     <button onclick="readSQL();" class="btn btn-success">Run</button>
-    <button type="button" class="btn btn-primary">Save</button>
-    <button type="button" class="btn btn-primary">Download</button>
+    <button type="button" class="btn btn-primary" onclick="saveSQL();">Save</button>
+    <button type="button" class="btn btn-primary" onclick="downloadSQL();">Download</button>
     <button type="button" class="btn btn-info" onclick="size += 2;editor.setFontSize(size);">Larger</button>
     <button type="button" class="btn btn-info" onclick="size -= 2;if (size < 8) size = 8;editor.setFontSize(size);">Smaller</button>
   </div>
@@ -77,6 +77,24 @@ function getSQL() {
   var sql = editor.getSelectedText();
   if (sql == null || sql.length == 0) sql = editor.getValue();
   return encodeURI(sql);
+}
+
+function saveSQL() {
+  $.ajax({type: "POST", url: "/data/save", data: {sql: editor.getValue()}, success: function(r){alert("Saved");}});
+}
+
+function downloadSQL() {
+  var form = document.createElement('form');
+  form.method = 'post';
+  form.action = '/data/download';
+  var inputField = document.createElement('input');
+  inputField.type = 'hidden';
+  inputField.name = 'sql';
+  inputField.value = editor.getValue();
+  form.appendChild(inputField);
+  document.body.appendChild(form);
+  form.submit();
+  document.body.removeChild(form);
 }
 
 function runSQL(sqlText) {

@@ -29,7 +29,7 @@ import org.mortbay.jetty.Request
 import scala.collection.mutable
 
 class DataHandler extends FusionHandler {
-  val sqlBuffer = mutable.Map.empty[String, String]
+  private val sqlBuffer = mutable.Map.empty[String, String]
 
   override def getContext: String = "/data"
 
@@ -51,6 +51,20 @@ class DataHandler extends FusionHandler {
             if (stream != null) scala.io.Source.fromInputStream(stream).mkString
             else ""
           })
+        case "save" =>
+          val userName = String.valueOf(request.getRemoteUser)
+          val sql = request.getParameterValues("sql")(0)
+          sqlBuffer.put(userName, sql)
+          ""
+        case "download" =>
+          response.setContentType("application/octet-stream")
+          val remoteUser = request.getRemoteUser
+          val userName = String.valueOf(remoteUser)
+          val sql = request.getParameterValues("sql")(0)
+          sqlBuffer.put(userName, sql)
+          response.setHeader("Content-Disposition", "attachment; filename=" +
+            (if (remoteUser == null) "" else remoteUser + "_") + System.currentTimeMillis + ".sql")
+          sql
         case "load" =>
           val paramMap = request.getParameterMap
           paramMap.get("sql") match {
@@ -93,9 +107,10 @@ class DataHandler extends FusionHandler {
           } catch {
             case e:Throwable =>
               e.printStackTrace()
+              val msg = e.getMessage.replace('"',''').replace("\n", "\\n")
               response.setContentType("text/html")
               s"""<html><body><script type='text/javascript'>
-              alert("${e.getMessage.replace('"',''')}");
+              alert("$msg");
             setTimeout('self.close()',100);
             </script></body></html>"""
           }
