@@ -88,26 +88,11 @@ class ConfigHandler extends FusionHandler {
           list.map { case (className, clazz) => s"<span class='btn btn-info task-processor col-lg-12' id='${clazz.getCanonicalName}' data-toggle='modal' data-target='#task_Modal'>$className</span>" }.mkString("") +
           "</div>"
       }.mkString(""))
-    val procUrl = getClass.getResource("/processors")
-    if (procUrl != null) {
-      val procUri = procUrl.toURI
-      val path = if (procUri.getScheme != "jar") Paths.get(procUri)
-      else FileSystems.newFileSystem(procUri, Collections.emptyMap[String, AnyRef]).getPath("/processors")
-      val iterator = Files.walk(path, 1).iterator
-      val sb = new StringBuilder
-      while (iterator.hasNext) {
-        val pt = iterator.next
-        val fileName = pt.getName(pt.getNameCount - 1).toString
-        if (fileName.endsWith(".json")) {
-          val name = fileName.substring(0, fileName.length - 5)
-          sb.append(s"<span class='btn btn-info task-processor col-lg-12' id='_$name' data-toggle='modal' data-target='#task_Modal'>$name</span>")
-        }
-      }
-      if (sb.nonEmpty) {
-        writer.write("<button class='btn btn-primary btn-block' data-toggle='collapse' data-target='#userProcessor'>User Processors</button><div id='userProcessor' class='collapse'>")
-        writer.write(sb.toString)
-        writer.write("</div>")
-      }
+
+    if (userProcessors.length > 0) {
+      writer.write("<button class='btn btn-primary btn-block' data-toggle='collapse' data-target='#userProcessor'>User Processors</button><div id='userProcessor' class='collapse'>")
+      writer.write(userProcessors)
+      writer.write("</div>")
     }
     response.setStatus(HttpServletResponse.SC_OK)
     true
@@ -233,5 +218,25 @@ class ConfigHandler extends FusionHandler {
       "createTask(\"" + taskName + "\", \"" + schema + "\", \"" + json + "\");"
     }.mkString("\n"))
     true
+  }
+
+  private val userProcessors = {
+    val sb = new StringBuilder
+    val procUrl = getClass.getResource("/processors")
+    if (procUrl != null) {
+      val procUri = procUrl.toURI
+      val path = if (procUri.getScheme != "jar") Paths.get(procUri)
+      else FileSystems.newFileSystem(procUri, Collections.emptyMap[String, AnyRef]).getPath("/processors")
+      val iterator = Files.walk(path, 1).iterator
+      while (iterator.hasNext) {
+        val pt = iterator.next
+        val fileName = pt.getName(pt.getNameCount - 1).toString
+        if (fileName.endsWith(".json")) {
+          val name = fileName.substring(0, fileName.length - 5)
+          sb.append(s"<span class='btn btn-info task-processor col-lg-12' id='_$name' data-toggle='modal' data-target='#task_Modal'>$name</span>")
+        }
+      }
+    }
+    sb.toString
   }
 }
