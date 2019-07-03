@@ -99,6 +99,7 @@ function downloadSQL() {
 
 function runSQL(sqlText) {
   window.open('/data/run?sql=' + encodeURI(sqlText), '_blank');
+  $("#editor").find("textarea").focus();
 }
 
 function readSQL() {
@@ -129,6 +130,10 @@ function readSQL() {
     runSQL(sql);
   }
 }
+
+$(window).bind('beforeunload', function(){
+  $.ajax({type: "POST", url: "/data/save", data: {sql: editor.getValue()}});
+});
 </script>
 </body>
 </html>
