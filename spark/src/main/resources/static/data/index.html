@@ -57,14 +57,18 @@
 </nav>
 
 <div class="container">
-  <div style="margin-bottom:20px">
+  <div class="row">
+  <div id="tables" class="col-lg-2">
+  </div>
+  <div class="col-lg-10" style="margin-bottom:20px">
     <button onclick="readSQL();" class="btn btn-success">Run</button>
     <button type="button" class="btn btn-primary" onclick="saveSQL();">Save</button>
     <button type="button" class="btn btn-primary" onclick="downloadSQL();">Download</button>
     <button type="button" class="btn btn-info" onclick="size += 2;editor.setFontSize(size);">Larger</button>
     <button type="button" class="btn btn-info" onclick="size -= 2;if (size < 8) size = 8;editor.setFontSize(size);">Smaller</button>
+    <div id="editor"></div>
   </div>
-  <div id="editor"></div>
+  </div>
 </div>
 <script>
 var editor = ace.edit("editor");
@@ -72,6 +76,7 @@ var size = 18;
 editor.session.setMode("ace/mode/sql");
 editor.setFontSize(size);
 $.ajax({url: "/data/buffer",success:function(result){editor.setValue(result);}});
+$.ajax({url: "/data/list",success:function(result){document.getElementById('tables').innerHTML = result;}});
 
 function getSQL() {
   var sql = editor.getSelectedText();
@@ -99,6 +104,11 @@ function downloadSQL() {
 
 function runSQL(sqlText) {
   window.open('/data/run?sql=' + encodeURI(sqlText), '_blank');
+  $("#editor").find("textarea").focus();
+}
+
+function runAnalyze(tableName) {
+  window.open('/data/analyze/' + tableName, '_blank');
   $("#editor").find("textarea").focus();
 }
 

@@ -15,8 +15,7 @@
   ~ You should have received a copy of the GNU Affero General Public License
   ~ along with this program.  If not, see <https://www.gnu.org/licenses/>.
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>fusion-parent_2.11</artifactId>
@@ -90,13 +89,13 @@
         </dependency>
 
         <dependency>
-            <groupId>com.fuseinfo</groupId>
+            <groupId>com.fuseinfo.fusion</groupId>
             <artifactId>spark-excel_${scala.compat.version}</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
-            <groupId>com.fuseinfo</groupId>
+            <groupId>com.fuseinfo.fusion</groupId>
             <artifactId>spark-cobol_${scala.compat.version}</artifactId>
             <version>${project.version}</version>
         </dependency>

@@ -34,6 +34,8 @@
     </licenses>
     <modules>
         <module>core</module>
+        <module>spark-cobol</module>
+        <module>spark-excel</module>
         <module>spark</module>
         <module>assembly</module>
     </modules>
