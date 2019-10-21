@@ -103,7 +103,19 @@ function downloadSQL() {
 }
 
 function runSQL(sqlText) {
-  window.open('/data/run?sql=' + encodeURI(sqlText), '_blank');
+  var mapForm = document.createElement("form");
+  mapForm.id = "sqlForm";
+  mapForm.target = "_blank";
+  mapForm.method = "POST";
+  mapForm.action = "/data/run";
+  var mapInput = document.createElement("input");
+  mapInput.type = "hidden";
+  mapInput.name = "sql";
+  mapInput.value = sqlText;
+  mapForm.appendChild(mapInput);
+  document.body.appendChild(mapForm);
+  mapForm.submit();
+  document.getElementById("sqlForm").remove();
   $("#editor").find("textarea").focus();
 }
 

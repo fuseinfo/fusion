@@ -17,9 +17,9 @@
 package com.fuseinfo.fusion.spark.web
 
 import java.io.{File, FileInputStream}
-import java.net.URLEncoder
 import java.util.regex.Pattern
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fuseinfo.fusion.spark.FusionHandler
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 import org.apache.commons.lang3.StringEscapeUtils
@@ -138,15 +138,17 @@ class DataHandler extends FusionHandler {
             paramMap.get("sql") match {
               case Array(sql: String) =>
                 val df = SparkSession.builder.getOrCreate.sql(sql)
-                val encodedSql = URLEncoder.encode(sql, "UTF-8")
+                val dataMap = new java.util.HashMap[String, AnyRef]
+                dataMap.put("sql", sql)
+                val encodedSql = (new ObjectMapper).writeValueAsString(dataMap)
                 """<!DOCTYPE html><html><head lang='en'><meta charset='utf-8'><meta content='width=device-width,initial-scale=1'
                 name='viewport'><link rel="stylesheet" type="text/css" href="/css/dataTables.bootstrap.css">
                 <link rel="stylesheet" href="/css/bootstrap.css"><script type="text/javascript" src="/js/jquery-3.3.1.js"></script>
                 <script type="text/javascript" src="/js/jquery.dataTables.js"></script><script type="text/javascript" src="/js/bootstrap.js"></script>
                 <script type="text/javascript" src="/js/dataTables.bootstrap.js"></script>""" +
                   "<script type='text/javascript' language='javascript' class='init'>\n" +
-                  "$(document).ready(function() {$('#data').DataTable({\"processing\":true,\"ajax\":\"load?sql=" +
-                  encodedSql + "\"});});</script></head><body>" +
+                  "$(document).ready(function() {$('#data').DataTable({\"processing\":true,\"ajax\":{\"url\":\"load\",\"data\":" +
+                  encodedSql + ",\"type\":\"POST\"}});});</script></head><body>" +
                   "<table id='data' class='table table-striped table-bordered' cellspacing='0' width='100%'><thead><tr><th>" +
                   df.columns.mkString("</th><th>") + "</th></tr></thead></table></body></html>"
             }
