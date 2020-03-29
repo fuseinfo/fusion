@@ -63,35 +63,8 @@ then
   CONF_ACLS="--conf spark.ui.view.acls=$ACLS"
 fi
 
-if [ "MASTER" == "yarn-cluster" ]
-then
-  FUSION_OUTPUT=/tmp/${USER}_${PPID}.out
-  exec $SPARK_CMD --class com.fuseinfo.fusion.Fusion --master $MASTER --name $APP_NAME --executor-memory $EXEC_MEM \
-  --executor-cores $EXEC_CORE --queue $QUEUE_NAME $CONF_ACLS --conf "spark.driver.userClassPathFirst=true" \
-  --conf "spark.executor.userClassPathFirst=true" $EXTRA_EXEC_OPTS $EXTRA_DRIV_OPTS $FUSION_EXTRA_CONF $SECURITY \
-  --num-executors $NUM_EXEC --jars $JARS $FUSION_JAR "$@" > $FUSION_OUTPUT 2>&1 & FUSION_PID=$!
-  sleep 10
-  grep 'state: RUNNING' $FUSION_OUTPUT
-  until [ $? -eq 0 ]
-  do
-    if ps -p $FUSION_PID
-    then
-      sleep 10
-      grep 'state: RUNNING' $FUSION_OUTPUT
-    else
-      cat $FUSION_OUTPUT
-      echo "Failed to launch FUSION"
-      rm $CONF_JAR
-      exit 1
-     fi
-  done
-  kill -9 $FUSION_PID
-  echo "Fusion was launched successfully."
-  rm $FUSION_OUTPUT
-else
-  exec $SPARK_CMD --class com.fuseinfo.fusion.Fusion --master $MASTER --name $APP_NAME --executor-memory $EXEC_MEM \
+exec $SPARK_CMD --class com.fuseinfo.fusion.Fusion --master $MASTER --name $APP_NAME --executor-memory $EXEC_MEM \
   --executor-cores $EXEC_CORE --queue $QUEUE_NAME $CONF_ACLS --conf "spark.driver.userClassPathFirst=true" \
   --conf "spark.executor.userClassPathFirst=true" $EXTRA_EXEC_OPTS $EXTRA_DRIV_OPTS $FUSION_EXTRA_CONF $SECURITY \
   --num-executors $NUM_EXEC --jars $JARS $FUSION_JAR "$@"
-fi
 rm $CONF_JAR

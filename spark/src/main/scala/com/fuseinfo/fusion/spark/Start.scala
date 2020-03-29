@@ -18,7 +18,9 @@ package com.fuseinfo.fusion.spark
 
 import com.fuseinfo.fusion.FusionFunction
 import com.fuseinfo.fusion.util.{ClassUtils, VarUtils}
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
+import org.apache.hadoop.security.alias.CredentialProviderFactory
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.api.java._
@@ -41,8 +43,17 @@ class Start(taskName:String, params:java.util.Map[String, AnyRef]) extends Fusio
   }
 
   override def apply(vars:java.util.Map[String, String]): String = {
+    val credentialPath = "hadoop.security.credential.provider.path"
     val enrichedParams = params.filter(_._2.isInstanceOf[String])
       .mapValues(v => VarUtils.enrichString(v.toString, vars))
+    val jceks = enrichedParams.getOrElse(credentialPath, System.getProperty(credentialPath))
+    if (jceks != null) {
+     val conf = new Configuration
+      conf.set(credentialPath, jceks)
+      CredentialProviderFactory.getProviders(conf).foreach(provider => provider.getAliases.foreach(alias =>
+      vars.put(alias, new String(provider.getCredentialEntry(alias).getCredential))))
+    }
+
     val sparkConf = new SparkConf()
     enrichedParams.filter(_._1.startsWith("spark.")).foreach(kv => sparkConf.set(kv._1, kv._2))
     if (!sparkConf.contains("spark.master")) sparkConf.setMaster("local[*]")
