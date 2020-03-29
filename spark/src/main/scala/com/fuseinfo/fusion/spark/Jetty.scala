@@ -47,6 +47,10 @@ class Jetty(taskName:String, params:java.util.Map[String, AnyRef]) extends Fusio
       case store:String => System.setProperty("javax.net.ssl.trustStore", store)
       case _ =>
     }
+    val defaultPort = params.get("port") match {
+      case num:Any if num.toString.matches("\\d+") => Some(num.toString.toInt)
+      case _ => None
+    }
     val connector = params.get("keyStore") match {
       case file:String =>
         val connector = new SslSocketConnector
@@ -54,11 +58,11 @@ class Jetty(taskName:String, params:java.util.Map[String, AnyRef]) extends Fusio
         val keyPass = params.get("keyStorePassword")
         connector.setKeystore(file)
         connector.setKeyPassword(keyPass.toString)
-        connector.setPort(14443)
+        connector.setPort(defaultPort.getOrElse(14443))
         connector
       case _ =>
         val connector = new SocketConnector
-        connector.setPort(14080)
+        connector.setPort(defaultPort.getOrElse(14080))
         connector
     }
 
