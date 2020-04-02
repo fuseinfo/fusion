@@ -1,10 +1,10 @@
 package com.fuseinfo.fusion.spark.writer
 
 import com.fuseinfo.fusion.FusionFunction
-import com.fuseinfo.fusion.util.VarUtils
+import com.fuseinfo.fusion.util.{ClassUtils, VarUtils}
+import java.util
 import org.apache.spark.sql.SparkSession
 import org.slf4j.LoggerFactory
-
 import scala.collection.JavaConversions._
 
 class EsWriter(taskName:String, params:java.util.Map[String, AnyRef]) extends FusionFunction {
@@ -12,6 +12,8 @@ class EsWriter(taskName:String, params:java.util.Map[String, AnyRef]) extends Fu
   def this(taskName:String) = this(taskName, new java.util.HashMap[String, AnyRef])
 
   @transient private val logger = LoggerFactory.getLogger(this.getClass)
+  @transient lazy val extensions: Map[String, Array[util.Map[String, String]]] = params
+    .filter(_._2.isInstanceOf[Array[_]]).toMap.asInstanceOf[Map[String, Array[java.util.Map[String, String]]]]
 
   override def init(params: java.util.Map[String, AnyRef]): Unit = {
     this.params.clear()
@@ -19,6 +21,26 @@ class EsWriter(taskName:String, params:java.util.Map[String, AnyRef]) extends Fu
   }
 
   override def apply(vars:java.util.Map[String, String]): String = {
+    val successExts = extensions.getOrElse("onSuccess", Array.empty).map{props =>
+      try {
+        ClassUtils.newExtension(props("__class"), props.toMap.filter(_._1 != "__class")
+          .mapValues(VarUtils.enrichString(_, vars)))
+      } catch {
+        case e:Exception =>
+          logger.warn("{} Unable to create an onSuccess extension", taskName, e:Any)
+          null
+      }
+    }.filter(_ != null)
+    val failureExts = extensions.getOrElse("onFailure", Array.empty).map{props =>
+      try {
+        ClassUtils.newExtension(props("__class"), props.toMap.filter(_._1 != "__class")
+          .mapValues(VarUtils.enrichString(_, vars)))
+      } catch {
+        case e:Exception =>
+          logger.warn("{} Unable to create an onFailure extension", taskName, e:Any)
+          null
+      }
+    }.filter(_ != null)
     val enrichedParams = params.filter(_._2.isInstanceOf[String])
       .mapValues(v => VarUtils.enrichString(v.toString, vars))
 
@@ -26,7 +48,10 @@ class EsWriter(taskName:String, params:java.util.Map[String, AnyRef]) extends Fu
     val spark = SparkSession.getActiveSession.getOrElse(SparkSession.getDefaultSession.get)
 
     val tableName = enrichedParams.getOrElse("table", params("__previous")).toString
-    val df = spark.sqlContext.table(tableName)
+    val df = enrichedParams.get("sql") match {
+      case Some(sqlText) => spark.sql(sqlText)
+      case None => spark.sqlContext.table(enrichedParams.getOrElse("table", params("__previous")).toString)
+    }
     val df2 = enrichedParams.get("coalesce") match {
       case Some(num) => df.coalesce(num.toInt)
       case None =>
@@ -41,8 +66,16 @@ class EsWriter(taskName:String, params:java.util.Map[String, AnyRef]) extends Fu
       if (key.startsWith("es.")) writer.option(key, value)
     }
     enrichedParams.get("mode").foreach(writer.mode)
-    writer.save(index)
-    s"Persisted data to elasticsearch index $index"
+    try {
+      writer.save(index)
+      val stats = enrichedParams
+      successExts.foreach(ext => scala.util.Try(ext(stats)))
+      s"Persisted data to elasticsearch index $index"
+    } catch {
+      case e:Throwable =>
+        failureExts.foreach(ext => scala.util.Try(ext(Map("error" -> e.getMessage))))
+        throw new RuntimeException(taskName + ": Failed to persist output", e)
+    }
   }
 
   override def getProcessorSchema:String = """{"title": "EsWriter","type":"object","properties": {
