@@ -39,7 +39,8 @@ class AvroWriter(taskName:String, params:java.util.Map[String, AnyRef]) extends 
   override def getProcessorSchema:String = """{"title": "AvroWriter","type":"object","properties": {
     "__class":{"type":"string","options":{"hidden":true},"default":"spark.writer.AvroWriter"},
     "path":{"type":"string","description":"Path to save the output"},
-    "sql":{"type":"string","description":"SQL query"},
+    "sql":{"type":"string","format":"sql","description":"Spark SQL statement",
+      "options":{"ace":{"useSoftTabs":true,"maxLines":16}}},
     "table":{"type":"string","description":"Table name"},
     "partitionBy":{"type":"string","description":"Partition by"},
     "verifyCounts":{"type":"boolean","description":"Verify counts?"},

@@ -35,7 +35,7 @@ public class SftpFileSystem extends FileSystem {
     private static final Log LOG = LogFactory.getLog(SftpFileSystem.class);
     public static final int DEFAULT_BUFFER_SIZE = 1024 * 1024;
     public static final int DEFAULT_BLOCK_SIZE = 4 * 1024;
-    public static final String FS_SFTP_USER_PREEFIX = "fs.sftp.user.";
+    public static final String FS_SFTP_USER_PREFIX = "fs.sftp.user.";
     public static final String FS_SFTP_PASS_PREFIX = "fs.sftp.pass.";
     public static final String FS_SFTP_KEY_PREFIX = "fs.sftp.key.";
     public static final String FS_SFTP_HOST = "fs.sftp.host";
@@ -79,7 +79,7 @@ public class SftpFileSystem extends FileSystem {
         conf.setInt(FS_SFTP_HOST_PORT, port);
         String user = uri.getUserInfo();
         if (user != null) {
-            conf.set(FS_SFTP_USER_PREEFIX + host, user);
+            conf.set(FS_SFTP_USER_PREFIX + host, user);
         }
         setConf(conf);
         this.uri = uri;
@@ -220,7 +220,7 @@ public class SftpFileSystem extends FileSystem {
         Configuration conf = getConf();
         String host = conf.get(FS_SFTP_HOST);
         int port = conf.getInt(FS_SFTP_HOST_PORT, SFTP_DEFAULT_PORT);
-        String user = conf.get(FS_SFTP_USER_PREEFIX + host);
+        String user = conf.get(FS_SFTP_USER_PREFIX + host);
         try {
             session = jsch.getSession(user, host, port);
             String pass = conf.get(FS_SFTP_PASS_PREFIX + host);

@@ -40,7 +40,8 @@ class CsvWriter(taskName:String, params:java.util.Map[String, AnyRef]) extends F
   override def getProcessorSchema:String = """{"title": "CsvWriter","type":"object","properties": {
     "__class":{"type":"string","options":{"hidden":true},"default":"spark.writer.CsvWriter"},
     "path":{"type":"string","description":"Path to save the output"},
-    "sql":{"type":"string","description":"SQL query"},
+    "sql":{"type":"string","format":"sql","description":"Spark SQL statement",
+      "options":{"ace":{"useSoftTabs":true,"maxLines":16}}},
     "table":{"type":"string","description":"Table name"},
     "header":{"type":"string","description":"header"},
     "delimiter":{"type":"string","description":"Delimiter"},

@@ -81,7 +81,8 @@ class EsWriter(taskName:String, params:java.util.Map[String, AnyRef]) extends Fu
   override def getProcessorSchema:String = """{"title": "EsWriter","type":"object","properties": {
     "__class":{"type":"string","options":{"hidden":true},"default":"spark.writer.EsWriter"},
     "index":{"type":"string","description":"Elasticsearch index"},
-    "sql":{"type":"string","description":"SQL query"},
+    "sql":{"type":"string","format":"sql","description":"Spark SQL statement",
+      "options":{"ace":{"useSoftTabs":true,"maxLines":16}}},
     "table":{"type":"string","description":"Table name"},
     "es.nodes":{"type":"string","description":"Elasticsearch nodes"},
     "es.port":{"type":"string","description":"Elasticsearch port"},
