@@ -21,8 +21,10 @@ import java.util
 import com.fuseinfo.fusion.FusionFunction
 import com.fuseinfo.fusion.spark.util.SparkUtils
 import com.fuseinfo.fusion.util.VarUtils
+import org.apache.hadoop.fs.{FileSystem, Path, PathFilter}
 import org.apache.spark.sql.SparkSession
 import org.slf4j.LoggerFactory
+
 import scala.collection.JavaConversions._
 
 class ExcelReader (taskName:String, params:java.util.Map[String, AnyRef]) extends FusionFunction {
@@ -30,8 +32,8 @@ class ExcelReader (taskName:String, params:java.util.Map[String, AnyRef]) extend
   def this(taskName:String) = this(taskName, new java.util.HashMap[String, AnyRef])
 
   @transient private val logger = LoggerFactory.getLogger(this.getClass)
-  private val optionSet = Set("sheet", "dateFormat", "timestampFormat", "emptyValue", "inferSchema", "header",
-    "skipLines","fields")
+  private val optionSet = Set("useHeader", "dataAddress", "treatEmptyValuesAsNulls", "inferSchema",
+    "addColorColumns", "timestampFormat", "maxRowsInMemory","excerptSize","workbookPassword")
 
   override def init(params: java.util.Map[String, AnyRef]): Unit = {
     this.params.clear()
@@ -44,9 +46,22 @@ class ExcelReader (taskName:String, params:java.util.Map[String, AnyRef]) extend
     val path = SparkUtils.stdPath(enrichedParams("path"))
     logger.info("{} Reading Excel from {}", taskName, path:Any)
     val spark = SparkSession.getActiveSession.getOrElse(SparkSession.getDefaultSession.get)
-    val reader = spark.read.format("com.fuseinfo.spark.sql.sources.v2.excel")
+    val reader = spark.read.format("com.crealytics.spark.excel")
     params.filter(p => optionSet.contains(p._1)).foreach(kv => reader.option(kv._1, kv._2.toString))
-    val df = reader.load(path)
+
+    val fs = FileSystem.get(spark.sparkContext.hadoopConfiguration)
+    val basePath = new Path(path)
+    val fileStatus = fs.getFileStatus(basePath)
+    val df = if (fileStatus.isDirectory) {
+      fs.listStatus(basePath, new PathFilter(){
+        override def accept(path: Path): Boolean = {
+          val pathName = path.getName.toLowerCase()
+          pathName.endsWith(".xls") || pathName.endsWith(".xlsx")
+        }
+      }).map(status => reader.load(status.getPath.toString)).reduce((df1, df2) => df1.union(df2))
+    } else {
+      reader.load(path)
+    }
     SparkUtils.registerDataFrame(df, taskName, enrichedParams)
     s"Read Excel files from $path lazily"
   }
@@ -54,15 +69,16 @@ class ExcelReader (taskName:String, params:java.util.Map[String, AnyRef]) extend
   override def getProcessorSchema:String = """{"title": "ExcelReader","type": "object","properties": {
     "__class":{"type":"string","options":{"hidden":true},"default":"spark.reader.ExcelReader"},
     "path":{"type":"string","description":"Path of the excel files"},
-    "sheet":{"type":"string","description":"Sheet name of the excel files"},
-    "header":{"type":"string","description":"Header line of the excel files"},
-    "fields":{"type":"string","description":"List of fields"},
-    "dateFormat":{"type":"string","description":"Date format"},
-    "timestampFormat":{"type":"string","description":"Timestamp format"},
-    "skipLines":{"type":"string","format":"number","description":"Number of lines to skip"},
-    "emptyValue":{"type":"string","description":"Empty value of the excel files"},
+    "useHeader":{"type":"boolean","description":"Has header?"},
+    "dataAddress":{"type":"string","description":"Range of data, such as 'Sheet1'!A1:C4"},
+    "treatEmptyValuesAsNulls":{"type":"boolean","description":"Treat empty values as nulls"},
     "inferSchema":{"type":"boolean","description":"Infer Schema?"},
+    "addColorColumns":{"type":"boolean","description":"Add Color Columns?"},
+    "timestampFormat":{"type":"string","description":"Timestamp format"},
+    "maxRowsInMemory":{"type":"string","format":"number","description":"Max number of rows in memory"},
+    "excerptSize":{"type":"string","format":"number","description":"Number of rows for inferring"},
+    "workbookPassword":{"type":"string","description":"Workbook Password"},
     "repartition":{"type":"string","format":"number","description":"Number of partitions"},
     "cache":{"type":"string","description":"cache the DataFrame?"}
-    },"required":["__class","path"]}"""
+    },"required":["__class","path","useHeader"]}"""
 }
