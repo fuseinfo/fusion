@@ -19,6 +19,7 @@ package com.fuseinfo.fusion.spark.web
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneId, ZonedDateTime}
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fuseinfo.fusion.Fusion
 import com.fuseinfo.fusion.spark.FusionHandler
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
@@ -30,21 +31,34 @@ class LogHandler extends FusionHandler {
 
   override def getRoles: Array[String] = Array("log")
 
+  private val mapper = new ObjectMapper
+
   override def handle(target: String, request: HttpServletRequest, response: HttpServletResponse, dispatch: Int): Unit = {
     response.setStatus(HttpServletResponse.SC_OK)
     val writer = response.getWriter
-
     val size = Fusion.getLogSize
     val zoneId = ZoneId.systemDefault
-    writer.write("{\"draw\": 1,\"recordsTotal\":" + size + ",\"recordsFiltered\":" + size + ",\"data\":[" +
-    Fusion.getLogs.map{case (ts, taskName, status, message) =>
-      "[\"" + ZonedDateTime.ofInstant(Instant.ofEpochMilli(ts), zoneId).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME) +
-      "\",\"" + StringEscapeUtils.escapeHtml(taskName) + "\",\"" + (status match {
+    val root = mapper.createObjectNode
+    root.put("draw", 1)
+    root.put("recordsTotal", size)
+    root.put("recordsFiltered", size)
+    val data = mapper.createArrayNode
+    Fusion.getLogs.foreach{case (ts, taskName, status, message) =>
+      val row = mapper.createArrayNode
+      row.add(ZonedDateTime.ofInstant(Instant.ofEpochMilli(ts), zoneId).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME))
+      row.add(StringEscapeUtils.escapeHtml(taskName))
+      row.add(status match {
         case 'P' => "Passed"
         case 'F' => "Failed"
         case 'C' => "Cancelled"
-        case __ => status
-      }) + "\",\"" + StringEscapeUtils.escapeHtml(message) + "\"]"}.mkString(",") + "]}")
+        case _ => Character.toString(status)
+      })
+      val msg = if (message.length > 500) message.substring(0, 496) + " ..." else message
+      row.add(StringEscapeUtils.escapeHtml(msg))
+      data.add(row)
+    }
+    root.set("data", data)
+    writer.write(mapper.writeValueAsString(root))
     request match {
       case r: Request => r.setHandled(true)
       case _ =>

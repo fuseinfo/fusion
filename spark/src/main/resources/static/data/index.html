@@ -119,11 +119,6 @@ function runSQL(sqlText) {
   $("#editor").find("textarea").focus();
 }
 
-function runAnalyze(tableName) {
-  window.open('/data/analyze/' + tableName, '_blank');
-  $("#editor").find("textarea").focus();
-}
-
 function readSQL() {
   var text = editor.getSelectedText();
   if (text == null || text.length == 0) text = editor.getValue();
