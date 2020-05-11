@@ -14,6 +14,10 @@
  */
 package com.fuseinfo.fusion.spark.writer
 
+import java.time.LocalDate
+
+import org.apache.avro.Conversions.DecimalConversion
+import org.apache.avro.LogicalTypes
 import org.apache.avro.file.DataFileReader
 import org.apache.avro.generic.{GenericData, GenericDatumReader, GenericRecord}
 import org.apache.avro.mapred.FsInput
@@ -21,6 +25,7 @@ import org.apache.avro.util.Utf8
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.scalatest.FunSuite
+
 import scala.collection.JavaConverters._
 
 class AvroWriterSuite extends FunSuite with DataWriterBase{
@@ -39,23 +44,25 @@ class AvroWriterSuite extends FunSuite with DataWriterBase{
     writer(vars)
     val avroFiles = fs.listStatus(outputPath)
     assert(avroFiles.size === 1)
+    val conversion = new DecimalConversion
+    val decimalType = LogicalTypes.decimal(8, 2)
     val out = getAvroRecords(avroFiles.head.getPath, conf)(record =>
       (record.get("id").asInstanceOf[java.lang.Long],
-        record.get("name").asInstanceOf[Utf8].toString,
-      record.get("dob").asInstanceOf[java.lang.Long],
-      record.get("amt").asInstanceOf[Utf8].toString,
+      record.get("name").asInstanceOf[Utf8].toString,
+      record.get("dob").asInstanceOf[java.lang.Integer],
+      conversion.fromFixed(record.get("amt").asInstanceOf[GenericData.Fixed], null , decimalType),
       record.get("lud").asInstanceOf[java.lang.Long])
     ).toList.sortBy(_._1)
     assert(out(0)._1 === 1)
     assert(out(0)._2.toString === "foo")
-    assert(new java.sql.Date(out(0)._3).toString == "1970-01-01")
-    assert(out(0)._4 === "12.34")
-    assert(out(0)._5 === 1514851200000L)
+    assert(LocalDate.ofEpochDay(out(0)._3.longValue()).toString == "1970-01-01")
+    assert(out(0)._4.toString === "12.34")
+    assert(out(0)._5 === 1514851200000000L)
     assert(out(1)._1 === 2)
     assert(out(1)._2.toString === "bar")
-    assert(new java.sql.Date(out(1)._3).toString == "1980-02-02")
-    assert(out(1)._4 === "56.78")
-    assert(out(1)._5 === 1517565600000L)
+    assert(LocalDate.ofEpochDay(out(1)._3.longValue()).toString == "1980-02-02")
+    assert(out(1)._4.toString === "56.78")
+    assert(out(1)._5 === 1517565600000000L)
   }
 
   private def getAvroRecords[T](path:Path, conf:Configuration)(rt:GenericRecord => T) = {

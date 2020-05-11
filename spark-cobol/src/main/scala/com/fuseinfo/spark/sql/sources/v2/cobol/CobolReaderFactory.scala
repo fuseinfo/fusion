@@ -26,21 +26,23 @@ import net.sf.JRecord.External.CobolCopybookLoader
 import net.sf.JRecord.IO.LineIOProvider
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
-import org.apache.spark.sql.Row
-import org.apache.spark.sql.sources.v2.reader.{DataReader, DataReaderFactory}
+import org.apache.spark.sql.sources.v2.reader.{InputPartition, InputPartitionReader}
 import org.apache.hadoop.mapreduce.{InputSplit, TaskAttemptID}
 import org.apache.hadoop.mapreduce.lib.input.{FileSplit, FixedLengthInputFormat}
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
-import org.apache.spark.sql.types.{ArrayType, StructField, StructType}
+import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.util.ArrayData
+import org.apache.spark.sql.types.{ArrayType, StringType, StructField, StructType}
+import org.apache.spark.unsafe.types.UTF8String
 
 import scala.util.Try
 
 class CobolReaderFactory(val part:FilePart, val conf:Configuration, copyBook:Array[Byte], bookName:String,
                          split:Int, font:String, copyBookFormat:Int, binaryFormat:Int, recordFormat:String,
                          numberType:Int, isTree:Boolean, nullValue:String, emptyValue:String)
-  extends DataReaderFactory[Row] {
+  extends InputPartition[InternalRow] {
 
-  def createDataReader(): DataReader[Row] = {
+  def createPartitionReader(): InputPartitionReader[InternalRow] = {
     val layoutDetail = (new CobolCopybookLoader).loadCopyBook(new ByteArrayInputStream(copyBook), bookName,
       split,0, font, copyBookFormat, binaryFormat, 0, null).asLayoutDetail
     val schema = CobolDataSourceReader.createSchema(isTree, layoutDetail, numberType, copyBook, bookName,
@@ -52,7 +54,7 @@ class CobolReaderFactory(val part:FilePart, val conf:Configuration, copyBook:Arr
 
 class CobolDataReader(layoutDetail:LayoutDetail, split:InputSplit, schema:StructType, conf:Configuration,
                       recordFormat:String, numberType:Int, isTree:Boolean, nullValue:String, emptyValue:String)
-  extends DataReader[Row] {
+  extends InputPartitionReader[InternalRow] {
 
   private val context = new TaskAttemptContextImpl(conf, new TaskAttemptID())
   private val inputFormat =
@@ -64,7 +66,7 @@ class CobolDataReader(layoutDetail:LayoutDetail, split:InputSplit, schema:Struct
 
   override def next(): Boolean = recordReader.nextKeyValue()
 
-  override def get(): Row = {
+  override def get(): InternalRow = {
     bbis.setData(recordReader.getCurrentValue.getBytes)
     reader.open(bbis, layoutDetail)
     val line = reader.read()
@@ -135,20 +137,26 @@ class CobolDataReader(layoutDetail:LayoutDetail, split:InputSplit, schema:Struct
   override def close(): Unit = {}
 
   private def createRow(buffer:collection.mutable.Map[String, Any], fields: Array[StructField],
-                groupName: String = ".", levels:List[Int] = Nil): Row = {
+                groupName: String = ".", levels:List[Int] = Nil): InternalRow = {
     Try{
-      Row(fields.map{field =>
+      InternalRow(fields.map{field =>
         val fname = field.name
         val bname = if (isTree) groupName + fname else fname
         field.dataType match {
-          case array: ArrayType => createArray(buffer, array, fname, groupName, levels)
+          case array: ArrayType => ArrayData.toArrayData(createArray(buffer, array, fname, groupName, levels))
           case record: StructType => createRow(buffer, record.fields, groupName + fname + ".", levels)
-          case _ =>
-            buffer.get(bname) match {
+          case dataType =>
+            val data = buffer.get(bname) match {
               case Some(data) => if (levels.isEmpty) data
                   else levels.foldRight(data)((i, op) => op.asInstanceOf[collection.mutable.ArrayBuffer[Any]].get(i))
               case None => null
             }
+            if (data != null) {
+              dataType match {
+                case _:StringType => UTF8String.fromString(data.toString)
+                case _ => data
+              }
+            } else null
         }
       }:_*)
     }.getOrElse(null)

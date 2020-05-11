@@ -33,10 +33,11 @@ import net.sf.cb2xml.`def`.Cb2xmlConstants
 import org.apache.hadoop.mapreduce.JobID
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit, FixedLengthInputFormat}
 import org.apache.hadoop.mapreduce.task.JobContextImpl
-import org.apache.spark.sql.sources.v2.reader.{DataReaderFactory, DataSourceReader}
+import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.sources.v2.reader.{DataSourceReader, InputPartition}
 import org.apache.spark.sql.sources.v2.{DataSourceOptions, DataSourceV2, ReadSupport}
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.SparkSession
 import org.w3c.dom.{Node, NodeList}
 
 import scala.collection.JavaConversions._
@@ -210,7 +211,7 @@ class CobolDataSourceReader(dso: DataSourceOptions) extends DataSourceReader {
 
   override def readSchema(): StructType = schema
 
-  override def createDataReaderFactories(): java.util.List[DataReaderFactory[Row]] = {
+  override def planInputPartitions(): java.util.List[InputPartition[InternalRow]] = {
     val spark = SparkSession.builder.getOrCreate
     val conf = new SerializableConfiguration(spark.sparkContext.hadoopConfiguration)
     FixedLengthInputFormat.setRecordLength(conf, recordLength)

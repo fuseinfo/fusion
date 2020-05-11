@@ -16,7 +16,6 @@
  */
 package com.fuseinfo.fusion.spark.reader
 
-import com.databricks.spark.avro._
 import com.fuseinfo.fusion.FusionFunction
 import com.fuseinfo.fusion.spark.util.SparkUtils
 import com.fuseinfo.fusion.util.VarUtils
@@ -41,7 +40,7 @@ class AvroReader(taskName: String, params:java.util.Map[String, AnyRef]) extends
     val path = SparkUtils.stdPath(enrichedParams("path"))
     logger.info("{} Reading AVRO from {}", taskName, path:Any)
     val spark = SparkSession.getActiveSession.getOrElse(SparkSession.getDefaultSession.get)
-    val df = spark.read.avro(path)
+    val df = spark.read.format("avro").load(path)
     SparkUtils.registerDataFrame(df, taskName, enrichedParams)
     s"Read Avro files from $path lazily"
   }

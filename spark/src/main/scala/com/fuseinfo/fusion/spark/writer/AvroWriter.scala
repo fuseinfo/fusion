@@ -16,7 +16,6 @@
  */
 package com.fuseinfo.fusion.spark.writer
 
-import com.databricks.spark.avro._
 import org.apache.spark.sql.{DataFrameWriter, Dataset, Row, SparkSession}
 
 class AvroWriter(taskName:String, params:java.util.Map[String, AnyRef]) extends FileWriter(taskName, params) {
@@ -32,9 +31,9 @@ class AvroWriter(taskName:String, params:java.util.Map[String, AnyRef]) extends 
     }
   }
 
-  override def applyWriter(writer: DataFrameWriter[Row], path: String): Unit = writer.avro(path)
+  override def applyWriter(writer: DataFrameWriter[Row], path: String): Unit = writer.format("avro").save(path)
 
-  override def countFile(spark: SparkSession, file: String): Long = spark.read.avro(file).count
+  override def countFile(spark: SparkSession, file: String): Long = spark.read.format("avro").load(file).count
 
   override def getProcessorSchema:String = """{"title": "AvroWriter","type":"object","properties": {
     "__class":{"type":"string","options":{"hidden":true},"default":"spark.writer.AvroWriter"},

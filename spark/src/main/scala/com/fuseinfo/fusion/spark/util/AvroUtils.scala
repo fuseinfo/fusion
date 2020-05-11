@@ -20,7 +20,6 @@ import java.nio.ByteBuffer
 import java.sql.{Date, Timestamp}
 import java.time.LocalDate
 
-import com.databricks.spark.avro.SchemaConverters.SchemaType
 import org.apache.avro.Schema.Type._
 import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.apache.avro.{LogicalTypes, Schema, SchemaBuilder}
@@ -30,6 +29,7 @@ import org.apache.spark.sql.types._
 import scala.collection.JavaConverters._
 
 object AvroUtils {
+  case class SchemaType(dataType: DataType, nullable: Boolean)
 
   def fromDays(days:Int): Date = java.sql.Date.valueOf(LocalDate.ofEpochDay(days.toInt))
 
