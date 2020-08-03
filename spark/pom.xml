@@ -130,20 +130,6 @@
             <artifactId>spark-cobol_${scala.compat.version}</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>net.sf</groupId>
-            <artifactId>cb2xml</artifactId>
-            <version>1.1.0</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/lib/cb2xml.jar</systemPath>
-        </dependency>
-        <dependency>
-            <groupId>net.sf</groupId>
-            <artifactId>JRecord</artifactId>
-            <version>0.90.0</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/lib/JRecord.jar</systemPath>
-        </dependency>
 
         <dependency>
             <groupId>org.apache.spark</groupId>

@@ -50,6 +50,8 @@ class SQL(taskName:String, params:java.util.Map[String, AnyRef]) extends FusionF
     "sql":{"type":"string","format":"sql","description":"Spark SQL statement",
       "options":{"ace":{"useSoftTabs":true,"maxLines":16}}},
     "repartition":{"type":"string","format":"number","description":"Number of partitions"},
-    "cache":{"type":"boolean","description":"cache the DataFrame?"}
+    "cache":{"type":"boolean","description":"cache the DataFrame?"},
+    "localCheckpoint":{"type":"boolean","description":"localCheckpoint the DataFrame?"},
+    "viewName":{"type":"string","description":"View Name to be registered"}
     },"required":["__class","sql"]}"""
 }

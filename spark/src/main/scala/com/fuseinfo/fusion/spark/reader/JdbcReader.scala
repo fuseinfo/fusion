@@ -73,6 +73,7 @@ class JdbcReader(taskName:String, params:java.util.Map[String, AnyRef]) extends 
     "numPartitions":{"type":"string","format":"number","description":"The number of partitions"},
     "fetchsize":{"type":"string","format":"number","description":"Number of record to be fetch at a time"},
     "repartition":{"type":"string","format":"number","description":"Number of partitions"},
-    "cache":{"type":"string","description":"cache the DataFrame?"}
+    "cache":{"type":"string","description":"cache the DataFrame?"},
+    "viewName":{"type":"string","description":"View Name to be registered"}
     },"required":["__class","url","driver","table"]}"""
 }

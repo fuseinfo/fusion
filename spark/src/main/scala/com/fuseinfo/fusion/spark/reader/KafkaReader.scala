@@ -160,6 +160,7 @@ class KafkaReader(taskName:String, params:java.util.Map[String, AnyRef]) extends
     "ranges":{"type":"string","description":"List of ranges"},
     "offsets":{"type":"string","description":"List of offsets"},
     "repartition":{"type":"string","format":"number","description":"Number of partitions"},
-    "cache":{"type":"boolean","description":"cache the DataFrame?"}
+    "cache":{"type":"boolean","description":"cache the DataFrame?"},
+    "viewName":{"type":"string","description":"View Name to be registered"}
     },"required":["__class","topic","kafka.bootstrap.servers","kafka.group.id"]}"""
 }

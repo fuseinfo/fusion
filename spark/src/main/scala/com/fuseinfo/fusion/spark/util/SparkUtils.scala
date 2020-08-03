@@ -25,12 +25,16 @@ object SparkUtils {
       case num:String => df.repartition(num.toInt)
       case _ => df
     }
+    val df3 = params.get("localCheckpoint") match {
+      case bool: String => try (df2.localCheckpoint(bool.toBoolean)) catch {case e:Exception => df2}
+      case _ => df2
+    }
     params.get("cache") match {
-      case "true" => df2.cache
-      case str:String => try {df2.persist(StorageLevel.fromString(str))} catch {case e:Exception => df2.persist()}
+      case "true" => df3.cache
+      case str:String => try {df3.persist(StorageLevel.fromString(str))} catch {case e:Exception => df3.persist()}
       case _ =>
     }
-    df2.createOrReplaceTempView(tableName.toUpperCase)
+    df3.createOrReplaceTempView(params.getOrDefault("viewName", tableName).toString.toUpperCase)
   }
 
   def stdPath(path: String): String = {

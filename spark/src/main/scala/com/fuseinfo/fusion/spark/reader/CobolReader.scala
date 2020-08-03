@@ -63,6 +63,7 @@ class CobolReader(taskName:String, params:java.util.Map[String, AnyRef]) extends
     "number":{"type":"string","format":"number","description":"How to cast numbers: decimal, double, string, mixed"},
     "tree":{"type":"string","format":"number","description":"Whether use tree/nested format"},
     "repartition":{"type":"integer","description":"Number of partitions"},
-    "cache":{"type":"string","description":"cache the DataFrame?"}
+    "cache":{"type":"string","description":"cache the DataFrame?"},
+    "viewName":{"type":"string","description":"View Name to be registered"}
     },"required":["__class","path","copybook"]}"""
 }
