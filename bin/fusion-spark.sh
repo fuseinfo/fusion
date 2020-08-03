@@ -10,7 +10,6 @@ EXEC_MEM=${EXEC_MEM:-2G}
 NUM_EXEC=${NUM_EXEC:-1}
 FUSION_CONF=${FUSION_CONF:-$FUSION_HOME/conf}
 
-
 FUSION_JAR=$(ls $FUSION_HOME/lib/fusion-core_*.jar)
 JARS_ALL=$(files=($FUSION_HOME/lib/*.*);files=("${files[@]/$FUSION_JAR}");IFS=,; echo "${files[*]}")
 JARS=`echo $JARS_ALL|sed 's/,,/,/'`
@@ -23,6 +22,11 @@ then
   chmod 700 $CONF_JAR
   JARS=$JARS,$CONF_JAR
   cd -
+fi
+
+if [ "$FUSION_EXTRA_JARS" != "" ]
+then
+  JARS=$JARS,$FUSION_EXTRA_JARS
 fi
 
 if [ "$SPARK_HOME" == "" ]
