@@ -16,25 +16,24 @@
  */
 package com.fuseinfo.fusion.spark.reader
 
-import com.fuseinfo.fusion.FusionFunction
+import java.util
+
 import com.fuseinfo.fusion.spark.util.SparkUtils
 import com.fuseinfo.fusion.util.VarUtils
 import org.apache.spark.sql.SparkSession
 import org.slf4j.LoggerFactory
+
 import scala.collection.JavaConversions._
 
-class OrcReader(taskName:String, params:java.util.Map[String, AnyRef]) extends FusionFunction {
+class OrcReader(taskName:String, params:util.Map[String, AnyRef])
+  extends (util.Map[String, String] => String) with Serializable {
 
-  def this(taskName:String) = this(taskName, new java.util.HashMap[String, AnyRef])
+
+  def this(taskName:String) = this(taskName, new util.HashMap[String, AnyRef])
 
   @transient private val logger = LoggerFactory.getLogger(this.getClass)
 
-  override def init(params: java.util.Map[String, AnyRef]): Unit = {
-    this.params.clear()
-    this.params.putAll(params)
-  }
-
-  override def apply(vars:java.util.Map[String, String]): String = {
+  override def apply(vars:util.Map[String, String]): String = {
     val enrichedParams = params.filter(_._2.isInstanceOf[String])
       .mapValues(v => VarUtils.enrichString(v.toString, vars))
     val path = SparkUtils.stdPath(enrichedParams("path"))
@@ -45,7 +44,7 @@ class OrcReader(taskName:String, params:java.util.Map[String, AnyRef]) extends F
     s"Read Orc files from $path lazily"
   }
 
-  override def getProcessorSchema:String = """{"title": "OrcReader","type": "object","properties": {
+  def getProcessorSchema:String = """{"title": "OrcReader","type": "object","properties": {
     "__class":{"type":"string","options":{"hidden":true},"default":"spark.reader.OrcReader"},
     "path":{"type":"string","description":"Path of the orc files"},
     "repartition":{"type":"string","format":"number","description":"Number of partitions"},

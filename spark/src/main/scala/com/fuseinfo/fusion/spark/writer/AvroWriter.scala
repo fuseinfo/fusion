@@ -35,7 +35,7 @@ class AvroWriter(taskName:String, params:java.util.Map[String, AnyRef]) extends 
 
   override def countFile(spark: SparkSession, file: String): Long = spark.read.format("avro").load(file).count
 
-  override def getProcessorSchema:String = """{"title": "AvroWriter","type":"object","properties": {
+  def getProcessorSchema:String = """{"title": "AvroWriter","type":"object","properties": {
     "__class":{"type":"string","options":{"hidden":true},"default":"spark.writer.AvroWriter"},
     "path":{"type":"string","description":"Path to save the output"},
     "sql":{"type":"string","format":"sql","description":"Spark SQL statement",

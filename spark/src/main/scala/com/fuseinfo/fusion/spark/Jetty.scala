@@ -19,7 +19,6 @@ package com.fuseinfo.fusion.spark
 import java.io.IOException
 import java.security.Principal
 
-import com.fuseinfo.fusion.FusionFunction
 import com.fuseinfo.fusion.util.{ClassUtils, VarUtils}
 import javax.naming.Context
 import javax.naming.directory.{InitialDirContext, SearchControls}
@@ -30,14 +29,10 @@ import org.mortbay.jetty.security._
 
 import scala.collection.JavaConversions._
 
-class Jetty(taskName:String, params:java.util.Map[String, AnyRef]) extends FusionFunction {
+class Jetty(taskName:String, params:java.util.Map[String, AnyRef])
+  extends (java.util.Map[String, String] => String) with Serializable {
 
   def this(taskName:String) = this(taskName, new java.util.HashMap[String, AnyRef])
-
-  override def init(params: java.util.Map[String, AnyRef]): Unit = {
-    this.params.clear()
-    this.params.putAll(params)
-  }
 
   override def apply(vars: java.util.Map[String, String]): String = {
 
@@ -113,24 +108,24 @@ class Jetty(taskName:String, params:java.util.Map[String, AnyRef]) extends Fusio
         securityHandler.setConstraintMappings(mappings.toArray)
         securityHandler
       case _ => handlerList
- }
+    }
 
- val server = new Server
- server.setHandlers(Array(staticHandler, handler))
- try {
-   connector.open()
- } catch{
-   case _:IOException =>
-     connector.setPort(0)
-     connector.open()
- }
- server.addConnector(connector)
- server.start()
+    val server = new Server
+    server.setHandlers(Array(staticHandler, handler))
+    try {
+      connector.open()
+    } catch{
+      case _:IOException =>
+        connector.setPort(0)
+        connector.open()
+    }
+    server.addConnector(connector)
+    server.start()
 
- "Started Jetty UI"
-}
+    "Started Jetty UI"
+  }
 
-  override def getProcessorSchema:String = """{"title": "Jetty","type": "object","properties": {
+  def getProcessorSchema:String = """{"title": "Jetty","type": "object","properties": {
     "__class":{"type":"string","options":{"hidden":true},"default":"spark.Jetty"},
     "login":{"type":"string","description":"Login type: ldap, file"},
     "trustStore":{"type":"string","description":"javax.net.ssl.trustStore"},
@@ -141,7 +136,7 @@ class Jetty(taskName:String, params:java.util.Map[String, AnyRef]) extends Fusio
 class LdapUserRealm(props: Map[String, String]) extends UserRealm {
 
  private val mappings = props.filterKeys(_.startsWith("ldap.group.")).map{kv =>
-   kv._1.substring(11) -> kv._2.split("\\,").map(_.trim).toSet
+   kv._1.substring(11) -> kv._2.split(",").map(_.trim).toSet
  }
 
  override def getName: String = "LdapUserRealm"

@@ -19,7 +19,6 @@ package com.fuseinfo.fusion
 import java.io.{File, FileInputStream}
 import java.util.concurrent.{CompletableFuture, ConcurrentHashMap, Executors, Future}
 import java.util.function.{Consumer, Supplier}
-
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.{ArrayNode, ObjectNode, TextNode, ValueNode}
 import com.fuseinfo.common.conf.ConfUtils
@@ -39,7 +38,7 @@ object Fusion extends App {
   private val futureCache = new ConcurrentHashMap[String, Future[_]]()
   protected val executorService = Executors.newFixedThreadPool(1000)
   private val packageName = getClass.getPackage.getName
-  val funcCache = new ConcurrentHashMap[String, FusionFunction]()
+  val funcCache = new ConcurrentHashMap[String, (java.util.Map[String, String] => String)]()
   private val taskLog = new Array[(Long, String, Char, String)](1000)
   private var taskLogIndex = 0
 
@@ -101,7 +100,7 @@ object Fusion extends App {
   while (taskStatusMap.exists{case (_, v) => v != 'P' && v != 'F'}) {
     Try(Thread.sleep(500))
   }
-  funcCache.foreach(func => Try(func._2.close()))
+  funcCache.foreach(func => Try(func._2.getClass.getMethod("close").invoke(func._2)))
   executorService.shutdown()
 
   private[fusion] def addTask(taskName:String, jsonNode:JsonNode) = {
@@ -118,7 +117,7 @@ object Fusion extends App {
 
   private[fusion] def iterateTask = taskMap.toIterator
 
-  private[fusion] def getFunction(taskName:String): FusionFunction = funcCache.get(taskName)
+  private[fusion] def getFunction(taskName:String): (java.util.Map[String, String] => String) = funcCache.get(taskName)
 
   private def loadTask(taskName:String, jsonNode:JsonNode, baseMap:java.util.Map[String, AnyRef]) = {
     jsonNode match {
@@ -138,10 +137,11 @@ object Fusion extends App {
     }
   }
 
-  private[fusion] def loadTask(taskName:String): FusionFunction =
+  private[fusion] def loadTask(taskName:String): (java.util.Map[String, String] => String) =
     loadTask(taskName, taskMap(taskName), new java.util.HashMap[String, AnyRef])
 
-  private def initTask(taskName:String, className:String, params:java.util.Map[String, AnyRef]): FusionFunction = {
+  private def initTask(taskName:String, className:String, params:java.util.Map[String, AnyRef]):
+  (java.util.Map[String, String] => String) = {
     funcCache.get(taskName) match {
       case null =>
         val f = (try {
@@ -152,7 +152,7 @@ object Fusion extends App {
             setTaskStatus(taskName, 'F', s"Unable to create an instance of class $className")
             logger.error("Unable to create an instance of class {}", className, e:Any)
             null
-        }).asInstanceOf[FusionFunction]
+        }).asInstanceOf[(java.util.Map[String, String] => String)]
         funcCache.put(taskName, f)
         f
       case f => f
@@ -229,7 +229,7 @@ object Fusion extends App {
             setTaskStatus(taskName, 'F', s"Unable to create an instance of class $className")
             logger.error("Unable to create an instance of class {}", className, e:Any)
             null
-        }).asInstanceOf[FusionFunction]
+        }).asInstanceOf[(java.util.Map[String, String] => String)]
         funcCache.put(taskName, f)
         f
       case f => f

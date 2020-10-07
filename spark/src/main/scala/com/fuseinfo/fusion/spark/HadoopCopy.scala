@@ -21,7 +21,6 @@ import java.security.{DigestOutputStream, MessageDigest, PrivilegedAction}
 import java.util.UUID
 import java.util.regex.{Matcher, Pattern}
 
-import com.fuseinfo.fusion.FusionFunction
 import com.fuseinfo.fusion.util.{ClassUtils, VarUtils}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileStatus, FileSystem, Path}
@@ -34,14 +33,15 @@ import org.slf4j.LoggerFactory
 import scala.collection.JavaConversions._
 import scala.util.Try
 
-class HadoopCopy(taskName:String, params:java.util.Map[String, AnyRef]) extends FusionFunction {
+class HadoopCopy(taskName:String, params:java.util.Map[String, AnyRef])
+  extends (java.util.Map[String, String] => String) with Serializable {
 
   def this(taskName:String) = this(taskName, new java.util.HashMap[String, AnyRef])
 
   @transient private val logger = LoggerFactory.getLogger(this.getClass)
 
-  @transient private lazy val extensions: Map[String, Array[java.util.Map[String, String]]] = params.filter(_._2.isInstanceOf[Array[_]])
-    .toMap.asInstanceOf[Map[String, Array[java.util.Map[String, String]]]]
+  @transient private lazy val extensions: Map[String, Array[java.util.Map[String, String]]] =
+    params.filter(_._2.isInstanceOf[Array[_]]).toMap.asInstanceOf[Map[String, Array[java.util.Map[String, String]]]]
 
   case class CopyTask(timestamp:Long, size:Long, fileStatus:FileStatus, matcher:Matcher)
 
@@ -52,12 +52,7 @@ class HadoopCopy(taskName:String, params:java.util.Map[String, AnyRef]) extends 
   }
 
   private val processedSet = new java.util.concurrent.ConcurrentHashMap[Path, Unit]
-  //private val failedSet = new java.util.concurrent.ConcurrentHashMap[Path, Unit]
-
-  override def init(params: java.util.Map[String, AnyRef]): Unit = {
-    this.params.clear()
-    this.params.putAll(params)
-  }
+  //private val failedSet = new util.concurrent.ConcurrentHashMap[Path, Unit]
 
   override def apply(vars:java.util.Map[String, String]): String = {
     val successExts = extensions.getOrElse("onSuccess", Array.empty).map{props =>
@@ -226,7 +221,7 @@ class HadoopCopy(taskName:String, params:java.util.Map[String, AnyRef]) extends 
       failureExts.foreach(ext => Try(ext(extStats)))
   }
 
-  override def getProcessorSchema:String = """{"title": "HadoopCopy","type":"object","properties": {
+  def getProcessorSchema:String = """{"title": "HadoopCopy","type":"object","properties": {
     "__class":{"type":"string","options":{"hidden":true},"default":"spark.HadoopCopy"},
     "source":{"type":"string","description":"Source directory"},
     "target":{"type":"string","description":"Target directory"},

@@ -17,17 +17,12 @@
 package com.fuseinfo.fusion.spark
 
 import com.fuseinfo.common.ScalaCompiler
-import com.fuseinfo.fusion.FusionFunction
 import org.apache.spark.sql.{Dataset, Row}
 
-class ScalaFunction(taskName:String, params:java.util.Map[String, AnyRef]) extends FusionFunction {
+class ScalaFunction(taskName:String, params:java.util.Map[String, AnyRef])
+  extends (java.util.Map[String, String] => String) with Serializable {
 
   def this(taskName:String) = this(taskName, new java.util.HashMap[String, AnyRef])
-
-  override def init(params: java.util.Map[String, AnyRef]): Unit = {
-    this.params.clear()
-    this.params.putAll(params)
-  }
 
   override def apply(vars:java.util.Map[String, String]): String = {
     val src = s"""import org.apache.spark.sql._
@@ -47,7 +42,7 @@ import org.apache.spark.sql.functions._
     "Executed Scala Function"
   }
 
-  override def getProcessorSchema:String = """{"title": "ScalaFunction","type": "object","properties": {
+  def getProcessorSchema:String = """{"title": "ScalaFunction","type": "object","properties": {
     "__class":{"type":"string","options":{"hidden":true},"default":"spark.ScalaFunction"},
     "scala":{"type":"string","format":"scala","description":"Scala code",
       "options":{"ace":{"useSoftTabs":true,"maxLines":16}}}

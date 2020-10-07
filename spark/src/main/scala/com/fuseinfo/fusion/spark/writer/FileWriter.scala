@@ -18,9 +18,7 @@ package com.fuseinfo.fusion.spark.writer
 
 import java.security.PrivilegedAction
 import java.util
-import java.util.UUID
 
-import com.fuseinfo.fusion.FusionFunction
 import com.fuseinfo.fusion.util.{ClassUtils, VarUtils}
 import org.apache.hadoop.fs.{FileSystem, LocatedFileStatus, Path}
 import org.apache.hadoop.security.UserGroupInformation
@@ -30,18 +28,14 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConversions._
 
-abstract class FileWriter(taskName:String, params:java.util.Map[String, AnyRef]) extends FusionFunction {
+abstract class FileWriter(taskName:String, params:util.Map[String, AnyRef])
+  extends (util.Map[String, String] => String) with Serializable {
 
   @transient private val logger = LoggerFactory.getLogger(this.getClass)
   @transient lazy val extensions: Map[String, Array[util.Map[String, String]]] = params
-    .filter(_._2.isInstanceOf[Array[_]]).toMap.asInstanceOf[Map[String, Array[java.util.Map[String, String]]]]
+    .filter(_._2.isInstanceOf[Array[_]]).toMap.asInstanceOf[Map[String, Array[util.Map[String, String]]]]
 
-  override def init(params: java.util.Map[String, AnyRef]): Unit = {
-    this.params.clear()
-    this.params.putAll(params)
-  }
-
-  def apply(vars: java.util.Map[String, String]): String = {
+  def apply(vars: util.Map[String, String]): String = {
     val successExts = extensions.getOrElse("onSuccess", Array.empty).map{props =>
       try {
         ClassUtils.newExtension(props("__class"), props.toMap.filter(_._1 != "__class")
@@ -82,7 +76,7 @@ abstract class FileWriter(taskName:String, params:java.util.Map[String, AnyRef])
         case _ => FileSystem.get(conf)
       }
 
-      val uuid = UUID.randomUUID.toString
+      val uuid = util.UUID.randomUUID.toString
       val stagingLoc = stagingBase + "/" + uuid
       val df = enrichedParams.get("sql") match {
         case Some(sqlText) => spark.sql(sqlText)
@@ -91,7 +85,7 @@ abstract class FileWriter(taskName:String, params:java.util.Map[String, AnyRef])
 
       val writer = enrichedParams.get("partitionBy") match {
         case Some(partitionBy) =>
-          val partitionCols = partitionBy.split("\\,").map(_.trim)
+          val partitionCols = partitionBy.split(",").map(_.trim)
           df.repartition(partitionCols.map(c => col(c)).toSeq: _*).write.partitionBy(partitionCols.toSeq: _*)
         case None => (enrichedParams.get("coalesce") match {
           case Some(num) => df.coalesce(num.toInt)
