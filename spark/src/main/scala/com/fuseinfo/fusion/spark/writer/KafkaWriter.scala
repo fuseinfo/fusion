@@ -18,8 +18,8 @@ package com.fuseinfo.fusion.spark.writer
 
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
+import java.util
 
-import com.fuseinfo.fusion.FusionFunction
 import com.fuseinfo.fusion.spark.util.AvroUtils
 import com.fuseinfo.fusion.util.VarUtils
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
@@ -33,16 +33,12 @@ import org.slf4j.LoggerFactory
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 
-class KafkaWriter(taskName:String, params:java.util.Map[String, AnyRef]) extends FusionFunction {
+class KafkaWriter(taskName:String, params:java.util.Map[String, AnyRef])
+  extends (util.Map[String, String] => String) with Serializable {
 
   def this(taskName:String) = this(taskName, new java.util.HashMap[String, AnyRef])
 
   @transient private val logger = LoggerFactory.getLogger(this.getClass)
-
-  override def init(params: java.util.Map[String, AnyRef]): Unit = {
-    this.params.clear()
-    this.params.putAll(params)
-  }
 
   override def apply(vars:java.util.Map[String, String]): String = {
     val enrichedParams = params.filter(_._2.isInstanceOf[String])
@@ -175,7 +171,7 @@ class KafkaWriter(taskName:String, params:java.util.Map[String, AnyRef]) extends
     (keyRecord, valRecord)
   }
 
-  override def getProcessorSchema:String = """{"title": "KafkaWriter","type":"object","properties": {
+  def getProcessorSchema:String = """{"title": "KafkaWriter","type":"object","properties": {
     "__class":{"type":"string","options":{"hidden":true},"default":"spark.writer.KafkaWriter"},
     "topic":{"type":"string","description":"Kafka topic"},
     "kafka.bootstrap.servers":{"type":"string","description":"Kafka bootstrap servers"},

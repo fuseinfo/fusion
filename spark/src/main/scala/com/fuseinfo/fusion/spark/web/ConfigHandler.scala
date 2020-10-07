@@ -16,8 +16,8 @@
  */
 package com.fuseinfo.fusion.spark.web
 
-import java.io.{File, FilenameFilter}
 import java.nio.file.{FileSystems, Files, Paths}
+import java.util
 import java.util.Collections
 import java.util.regex.Pattern
 
@@ -25,7 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.dataformat.yaml.{YAMLFactory, YAMLGenerator}
 import com.fuseinfo.common.conf.ConfUtils
-import com.fuseinfo.fusion.{Fusion, FusionFunction}
+import com.fuseinfo.fusion.Fusion
 import com.fuseinfo.fusion.spark.FusionHandler
 import com.fuseinfo.fusion.util.ClassUtils
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
@@ -47,7 +47,8 @@ class ConfigHandler extends FusionHandler {
 
   override def getRoles: Array[String] = Array("admin")
 
-  private val funcGroupList = ClassUtils.getAllClasses(null, classOf[FusionFunction])
+  private val funcGroupList = ClassUtils.getAllClasses(null, classOf[(util.Map[String, String] => String)])
+    .filter{case (_, clazz) => scala.util.Try(clazz.getMethod("getProcessorSchema")).isSuccess}
     .map { case (className, clazz) =>
       val packName = clazz.getPackage.getName
       (if (packName == "com.fuseinfo.fusion") "fusion"
@@ -106,8 +107,10 @@ class ConfigHandler extends FusionHandler {
     response.setContentType("application/text")
     val schema = if (className.charAt(0) == '_')
       scala.io.Source.fromInputStream(getClass.getClassLoader.getResourceAsStream("processors/" + className.substring(1) + ".json")).mkString
-    else Class.forName(className).getDeclaredConstructor(classOf[String]).newInstance(taskName)
-      .asInstanceOf[FusionFunction].getProcessorSchema
+    else {
+      val task = Class.forName(className).getDeclaredConstructor(classOf[String]).newInstance(taskName)
+      scala.util.Try(task.getClass.getMethod("getProcessorSchema").invoke(task).toString).getOrElse(getProcessorSchema)
+    }
     response.getWriter.write(schema)
     true
   }
@@ -169,7 +172,7 @@ class ConfigHandler extends FusionHandler {
         Fusion.iterateTask.map { case (taskName, jsonNode) =>
           val json = jsonNode.toString.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "").replace("\r", "")
           val func = Fusion.getFunction(taskName)
-          val schema = (if (func != null) func
+          val task = if (func != null) func
           else {
             val className = jsonNode.get("__class").asText
             val clazz = try {
@@ -177,8 +180,10 @@ class ConfigHandler extends FusionHandler {
             } catch {
               case _:ClassNotFoundException => Class.forName("com.fuseinfo.fusion." + className)
             }
-            clazz.getDeclaredConstructor(classOf[String]).newInstance(taskName).asInstanceOf[FusionFunction]
-          }).getProcessorSchema.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "").replace("\r", "")
+            clazz.getDeclaredConstructor(classOf[String]).newInstance(taskName)
+          }
+          val schema = scala.util.Try(task.getClass.getMethod("getProcessorSchema").invoke(task).toString)
+            .getOrElse(getProcessorSchema).replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "").replace("\r", "")
           "createTask(\"" + taskName + "\", \"" + schema + "\", \"" + json + "\");"
         }.mkString("\n") +
         "}\n")
@@ -214,7 +219,8 @@ class ConfigHandler extends FusionHandler {
       Fusion.addTask(taskName, jsonNode)
       val func = Fusion.loadTask(taskName)
       val json = jsonNode.toString.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "").replace("\r", "")
-      val schema = func.getProcessorSchema.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "").replace("\r", "")
+      val schema = scala.util.Try(func.getClass.getMethod("getProcessorSchema").invoke(func).toString)
+        .getOrElse(getProcessorSchema).replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "").replace("\r", "")
       "createTask(\"" + taskName + "\", \"" + schema + "\", \"" + json + "\");"
     }.mkString("\n"))
     true
@@ -239,4 +245,7 @@ class ConfigHandler extends FusionHandler {
     }
     sb.toString
   }
+
+  private def getProcessorSchema: String =
+    """{"title": "Function","type": "object","properties": {"__class":{"type":"string","options":{"hidden":true}}},"required":["__class"]}"""
 }

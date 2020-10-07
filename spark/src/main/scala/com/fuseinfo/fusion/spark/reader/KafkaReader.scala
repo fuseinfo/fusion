@@ -16,9 +16,8 @@
  */
 package com.fuseinfo.fusion.spark.reader
 
-import java.time.Duration
+import java.util
 
-import com.fuseinfo.fusion.FusionFunction
 import com.fuseinfo.fusion.spark.util.{AvroUtils, SparkUtils}
 import com.fuseinfo.fusion.util.VarUtils
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
@@ -34,22 +33,18 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConversions._
 
-class KafkaReader(taskName:String, params:java.util.Map[String, AnyRef]) extends FusionFunction {
+class KafkaReader(taskName:String, params:util.Map[String, AnyRef])
+  extends (util.Map[String, String] => String) with Serializable {
 
-  def this(taskName:String) = this(taskName, new java.util.HashMap[String, AnyRef])
+  def this(taskName:String) = this(taskName, new util.HashMap[String, AnyRef])
 
   @transient private val logger = LoggerFactory.getLogger(this.getClass)
 
-  override def init(params: java.util.Map[String, AnyRef]): Unit = {
-    this.params.clear()
-    this.params.putAll(params)
-  }
-
-  override def apply(vars:java.util.Map[String, String]): String = {
+  override def apply(vars:util.Map[String, String]): String = {
     val enrichedParams = params.filter(_._2.isInstanceOf[String])
       .mapValues(v => VarUtils.enrichString(v.toString, vars))
     val spark = SparkSession.getActiveSession.getOrElse(SparkSession.getDefaultSession.get)
-    val kafkaParams = new java.util.HashMap[String, AnyRef]
+    val kafkaParams = new util.HashMap[String, AnyRef]
     enrichedParams.filter(_._1.startsWith("kafka.")).foreach(kv => kafkaParams.put(kv._1.substring(6), kv._2))
     kafkaParams.put("key.deserializer","org.apache.kafka.common.serialization.ByteArrayDeserializer")
     kafkaParams.put("value.deserializer","org.apache.kafka.common.serialization.ByteArrayDeserializer")
@@ -74,12 +69,12 @@ class KafkaReader(taskName:String, params:java.util.Map[String, AnyRef]) extends
             range.substring(bgnIdx + 1, endIdx).toLong, range.substring(endIdx + 1).toLong)
         }
       case None =>
-        val clientParams = kafkaParams.clone.asInstanceOf[java.util.HashMap[String, AnyRef]]
+        val clientParams = kafkaParams.clone.asInstanceOf[util.HashMap[String, AnyRef]]
         clientParams.put("enable.auto.commit", "false")
         clientParams.put("auto.offset.reset", "earliest")
         clientParams.put("group.id", "spark-executor-" + kafkaParams.get("group.id"))
         val consumer = new KafkaConsumer[Array[Byte], Array[Byte]](clientParams)
-        consumer.subscribe(java.util.Arrays.asList(topic))
+        consumer.subscribe(util.Arrays.asList(topic))
         consumer.poll(0)
         val topicParts = consumer.assignment
         consumer.seekToBeginning(topicParts)
@@ -150,7 +145,7 @@ class KafkaReader(taskName:String, params:java.util.Map[String, AnyRef]) extends
     s"Read Kafka data from $topic lazily"
   }
 
-  override def getProcessorSchema:String = """{"title": "KafkaReader","type": "object","properties": {
+  def getProcessorSchema:String = """{"title": "KafkaReader","type": "object","properties": {
     "__class":{"type":"string","options":{"hidden":true},"default":"spark.reader.KafkaReader"},
     "topic":{"type":"string","description":"Kafka topic"},
     "kafka.bootstrap.servers":{"type":"string","description":"Kafka bootstrap servers"},

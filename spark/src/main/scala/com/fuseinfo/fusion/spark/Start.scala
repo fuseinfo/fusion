@@ -16,7 +16,6 @@
  */
 package com.fuseinfo.fusion.spark
 
-import com.fuseinfo.fusion.FusionFunction
 import com.fuseinfo.fusion.util.{ClassUtils, VarUtils}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
@@ -27,20 +26,17 @@ import org.apache.spark.sql.api.java._
 import org.apache.spark.sql.expressions.UserDefinedAggregateFunction
 import org.apache.spark.sql.types.{ArrayType, DataType, DataTypes}
 import org.slf4j.LoggerFactory
+
 import scala.collection.JavaConversions._
 import scala.util.Try
 
-class Start(taskName:String, params:java.util.Map[String, AnyRef]) extends FusionFunction {
+class Start(taskName:String, params:java.util.Map[String, AnyRef])
+  extends (java.util.Map[String, String] => String) with Serializable {
 
   def this(taskName:String) = this(taskName, new java.util.HashMap[String, AnyRef])
 
   @transient private val logger = LoggerFactory.getLogger(this.getClass)
   private val udfNames = collection.mutable.Set.empty[String]
-
-  override def init(params: java.util.Map[String, AnyRef]): Unit = {
-    this.params.clear()
-    this.params.putAll(params)
-  }
 
   override def apply(vars:java.util.Map[String, String]): String = {
     val credentialPath = "hadoop.security.credential.provider.path"
@@ -73,15 +69,15 @@ class Start(taskName:String, params:java.util.Map[String, AnyRef]) extends Fusio
     "Started Spark"
   }
 
-  override def close(): Unit = Try(FileSystem.closeAll())
+  def close(): Unit = Try(FileSystem.closeAll())
 
   def registerUDF(spark:SparkSession, udfName:String, clazz:Class[_]): Unit = {
     if (!udfNames.contains(udfName)) {
       scala.util.Try{
         val dataType = if (classOf[UserDefinedAggregateFunction].isAssignableFrom(clazz)) {
           null
-        } else if (classOf[WithReturnType].isAssignableFrom(clazz)) {
-          clazz.newInstance().asInstanceOf[WithReturnType].returnType
+        } else if (Try(clazz.getMethod("returnType")).isSuccess) {
+          clazz.getMethod("returnType").invoke(clazz.newInstance()).asInstanceOf[DataType]
         } else {
           val methods = clazz.getDeclaredMethods
           val rtClass = methods(methods.indexWhere(m =>
@@ -136,11 +132,7 @@ class Start(taskName:String, params:java.util.Map[String, AnyRef]) extends Fusio
     }
   }
 
-  override def getProcessorSchema:String = """{"title": "Start","type": "object","properties": {
+  def getProcessorSchema:String = """{"title": "Start","type": "object","properties": {
     "__class":{"type":"string","options":{"hidden":true},"default":"spark.Start"}
     },"required":["__class"]}"""
-}
-
-trait WithReturnType {
-  def returnType:DataType
 }

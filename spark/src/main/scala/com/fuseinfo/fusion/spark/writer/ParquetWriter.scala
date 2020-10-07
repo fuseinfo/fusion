@@ -35,7 +35,7 @@ class ParquetWriter(taskName:String, params:java.util.Map[String, AnyRef]) exten
 
   override def countFile(spark: SparkSession, file: String): Long = spark.read.parquet(file).count
 
-  override def getProcessorSchema:String = """{"title": "ParquetWriter","type":"object","properties": {
+  def getProcessorSchema:String = """{"title": "ParquetWriter","type":"object","properties": {
     "__class":{"type":"string","options":{"hidden":true},"default":"spark.writer.ParquetWriter"},
     "path":{"type":"string","description":"Path to save the output"},
     "sql":{"type":"string","format":"sql","description":"Spark SQL statement",

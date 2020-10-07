@@ -18,8 +18,8 @@ package com.fuseinfo.fusion.spark.reader
 
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
+import java.util
 
-import com.fuseinfo.fusion.FusionFunction
 import com.fuseinfo.fusion.spark.util.{AvroUtils, SparkUtils}
 import com.fuseinfo.fusion.util.VarUtils
 import com.univocity.parsers.csv.{CsvParser, CsvParserSettings}
@@ -33,22 +33,19 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Row, SparkSession}
 import org.slf4j.LoggerFactory
+
 import scala.collection.JavaConversions._
 
-class CsvReader(taskName:String, params:java.util.Map[String, AnyRef]) extends FusionFunction {
+class CsvReader(taskName:String, params:util.Map[String, AnyRef])
+  extends (util.Map[String, String] => String) with Serializable {
 
-  def this(taskName:String) = this(taskName, new java.util.HashMap[String, AnyRef])
+  def this(taskName:String) = this(taskName, new util.HashMap[String, AnyRef])
 
   @transient private val logger = LoggerFactory.getLogger(this.getClass)
 
   private val reserved = Set("path","schema","fields", "skipLines")
 
-  override def init(params: java.util.Map[String, AnyRef]): Unit = {
-    this.params.clear()
-    this.params.putAll(params)
-  }
-
-  override def apply(vars:java.util.Map[String, String]): String = {
+  override def apply(vars:util.Map[String, String]): String = {
     val columnNameOfCorruptRecord = params.getOrDefault("columnNameOfCorruptRecord", "_corrupt_record").toString
     val schemaOption = params.get("schema") match {
       case avsc:String => AvroUtils.toSqlType((new Schema.Parser).parse(avsc)).dataType match {
@@ -59,7 +56,7 @@ class CsvReader(taskName:String, params:java.util.Map[String, AnyRef]) extends F
       }
       case _ =>
         params.get("fields") match {
-          case fields:String => Some(new StructType(fields.split("\\,").map(field =>
+          case fields:String => Some(new StructType(fields.split(",").map(field =>
             StructField(field, DataTypes.StringType, true))))
           case _ => None
         }
@@ -230,7 +227,7 @@ class CsvReader(taskName:String, params:java.util.Map[String, AnyRef]) extends F
     spark.createDataFrame(rdd, schema)
   }
 
-  override def getProcessorSchema:String = """{"title": "CsvReader","type": "object","properties": {
+  def getProcessorSchema:String = """{"title": "CsvReader","type": "object","properties": {
     "__class":{"type":"string","options":{"hidden":true},"default":"spark.reader.CsvReader"},
     "path":{"type":"string","description":"Path of the CSV files"},
     "schema":{"type":"string","description":"Schema of the CSV files"},

@@ -17,34 +17,30 @@
 package com.fuseinfo.fusion.spark.reader
 
 import java.text.SimpleDateFormat
-
-import com.fuseinfo.fusion.FusionFunction
+import java.util
 import com.fuseinfo.fusion.spark.util.{AvroUtils, SparkUtils}
 import com.fuseinfo.fusion.util.VarUtils
 import org.apache.avro.Schema
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Row, SparkSession}
 import org.slf4j.LoggerFactory
+
 import scala.collection.JavaConversions._
 import scala.util.Try
 
-class FixedLengthReader(taskName:String, params:java.util.Map[String, AnyRef]) extends FusionFunction {
+class FixedLengthReader(taskName:String, params:util.Map[String, AnyRef])
+  extends (util.Map[String, String] => String) with Serializable {
 
-  def this(taskName:String) = this(taskName, new java.util.HashMap[String, AnyRef])
+  def this(taskName:String) = this(taskName, new util.HashMap[String, AnyRef])
 
   @transient private val logger = LoggerFactory.getLogger(this.getClass)
 
-  override def init(params: java.util.Map[String, AnyRef]): Unit = {
-    this.params.clear()
-    this.params.putAll(params)
-  }
-
-  override def apply(vars: java.util.Map[String, String]): String = {
+  override def apply(vars: util.Map[String, String]): String = {
     val enrichedParams = params.filter(_._2.isInstanceOf[String])
       .mapValues(v => VarUtils.enrichString(v.toString, vars))
     val path = SparkUtils.stdPath(enrichedParams("path"))
     val spark = SparkSession.getActiveSession.getOrElse(SparkSession.getDefaultSession.get)
-    val fields = params.get("fields").toString.split("\\,")
+    val fields = params.get("fields").toString.split(",")
     var lastBgn = params.getOrElse("length", "-1").toString.toInt
     val columns = (for (i <- fields.length - 1 to 0 by -1) yield {
       val colon = fields(i).indexOf(':')
@@ -101,7 +97,7 @@ class FixedLengthReader(taskName:String, params:java.util.Map[String, AnyRef]) e
     s"Read fixed length files from $path lazily"
   }
 
-  override def getProcessorSchema:String = """{"title": "FixedLengthReader","type": "object","properties": {
+  def getProcessorSchema:String = """{"title": "FixedLengthReader","type": "object","properties": {
     "__class":{"type":"string","options":{"hidden":true},"default":"spark.reader.FixedLengthReader"},
     "path":{"type":"string","description":"Path of the fix length files"},
     "fields":{"type":"string","description":"List of fields"},

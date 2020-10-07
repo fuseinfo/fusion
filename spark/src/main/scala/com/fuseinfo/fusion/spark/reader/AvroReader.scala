@@ -16,25 +16,21 @@
  */
 package com.fuseinfo.fusion.spark.reader
 
-import com.fuseinfo.fusion.FusionFunction
 import com.fuseinfo.fusion.spark.util.SparkUtils
 import com.fuseinfo.fusion.util.VarUtils
+import java.util
 import org.apache.spark.sql.SparkSession
 import org.slf4j.LoggerFactory
 import scala.collection.JavaConversions._
 
-class AvroReader(taskName: String, params:java.util.Map[String, AnyRef]) extends FusionFunction {
+class AvroReader(taskName: String, params:util.Map[String, AnyRef])
+  extends (util.Map[String, String] => String) with Serializable {
 
-  def this(taskName:String) = this(taskName, new java.util.HashMap[String, AnyRef])
+  def this(taskName:String) = this(taskName, new util.HashMap[String, AnyRef])
 
   @transient private val logger = LoggerFactory.getLogger(this.getClass)
 
-  override def init(params: java.util.Map[String, AnyRef]): Unit = {
-    this.params.clear()
-    this.params.putAll(params)
-  }
-
-  override def apply(vars:java.util.Map[String, String]): String = {
+  override def apply(vars:util.Map[String, String]): String = {
     val enrichedParams = params.filter(_._2.isInstanceOf[String])
       .mapValues(v => VarUtils.enrichString(v.toString, vars))
     val path = SparkUtils.stdPath(enrichedParams("path"))
@@ -45,7 +41,7 @@ class AvroReader(taskName: String, params:java.util.Map[String, AnyRef]) extends
     s"Read Avro files from $path lazily"
   }
 
-  override def getProcessorSchema:String = """{"title": "AvroReader","type": "object","properties": {
+  def getProcessorSchema:String = """{"title": "AvroReader","type": "object","properties": {
     "__class":{"type":"string","options":{"hidden":true},"default":"spark.reader.AvroReader"},
     "path":{"type":"string","description":"Path of the avro files"},
     "repartition":{"type":"string","format":"number","description":"Number of partitions"},

@@ -16,21 +16,17 @@
  */
 package com.fuseinfo.fusion
 
-class Wait(taskName:String, params: java.util.Map[String, AnyRef]) extends FusionFunction {
+class Wait(taskName:String, params: java.util.Map[String, AnyRef])
+  extends (java.util.Map[String, String] => String) with Serializable {
 
   def this(taskName:String) = this(taskName, new java.util.HashMap[String, AnyRef])
-
-  override def init(params: java.util.Map[String, AnyRef]): Unit = {
-    this.params.clear()
-    params.putAll(params)
-  }
 
   override def apply(vars:java.util.Map[String, String]): String = {
     Thread.sleep(Long.MaxValue)
     "Wake up"
   }
 
-  override def getProcessorSchema:String = """{"title": "Wait","type": "object","properties": {
+  def getProcessorSchema:String = """{"title": "Wait","type": "object","properties": {
     "__class":{"type":"string","options":{"hidden":true},"default":"Wait"}
     },"required":["__class"]}"""
 }

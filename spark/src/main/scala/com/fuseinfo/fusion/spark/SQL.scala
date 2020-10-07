@@ -16,23 +16,19 @@
  */
 package com.fuseinfo.fusion.spark
 
-import com.fuseinfo.fusion.FusionFunction
 import com.fuseinfo.fusion.spark.util.SparkUtils
 import com.fuseinfo.fusion.util.VarUtils
 import org.apache.spark.sql.SparkSession
 import org.slf4j.LoggerFactory
+
 import scala.collection.JavaConversions._
 
-class SQL(taskName:String, params:java.util.Map[String, AnyRef]) extends FusionFunction {
+class SQL(taskName:String, params:java.util.Map[String, AnyRef])
+  extends (java.util.Map[String, String] => String) with Serializable {
 
   def this(taskName:String) = this(taskName, new java.util.HashMap[String, AnyRef])
 
   @transient private val logger = LoggerFactory.getLogger(this.getClass)
-
-  override def init(params: java.util.Map[String, AnyRef]): Unit = {
-    this.params.clear()
-    this.params.putAll(params)
-  }
 
   override def apply(vars:java.util.Map[String, String]): String = {
     val enrichedParams = params.filter(_._2.isInstanceOf[String])
@@ -45,7 +41,7 @@ class SQL(taskName:String, params:java.util.Map[String, AnyRef]) extends FusionF
     s"Executed SQL $sqlText"
   }
 
-  override def getProcessorSchema:String = """{"title": "SQL","type": "object","properties": {
+  def getProcessorSchema:String = """{"title": "SQL","type": "object","properties": {
     "__class":{"type":"string","options":{"hidden":true},"default":"spark.SQL"},
     "sql":{"type":"string","format":"sql","description":"Spark SQL statement",
       "options":{"ace":{"useSoftTabs":true,"maxLines":16}}},

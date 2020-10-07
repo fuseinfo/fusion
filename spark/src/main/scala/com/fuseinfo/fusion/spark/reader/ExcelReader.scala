@@ -17,8 +17,6 @@
 package com.fuseinfo.fusion.spark.reader
 
 import java.util
-
-import com.fuseinfo.fusion.FusionFunction
 import com.fuseinfo.fusion.spark.util.SparkUtils
 import com.fuseinfo.fusion.util.VarUtils
 import org.apache.hadoop.fs.{FileSystem, Path, PathFilter}
@@ -27,18 +25,14 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConversions._
 
-class ExcelReader (taskName:String, params:java.util.Map[String, AnyRef]) extends FusionFunction {
+class ExcelReader (taskName:String, params:util.Map[String, AnyRef])
+  extends (util.Map[String, String] => String) with Serializable {
 
-  def this(taskName:String) = this(taskName, new java.util.HashMap[String, AnyRef])
+  def this(taskName:String) = this(taskName, new util.HashMap[String, AnyRef])
 
   @transient private val logger = LoggerFactory.getLogger(this.getClass)
   private val optionSet = Set("useHeader", "dataAddress", "treatEmptyValuesAsNulls", "inferSchema",
     "addColorColumns", "timestampFormat", "maxRowsInMemory","excerptSize","workbookPassword")
-
-  override def init(params: java.util.Map[String, AnyRef]): Unit = {
-    this.params.clear()
-    this.params.putAll(params)
-  }
 
   override def apply(vars: util.Map[String, String]): String = {
     val enrichedParams = params.filter(_._2.isInstanceOf[String])
@@ -66,7 +60,7 @@ class ExcelReader (taskName:String, params:java.util.Map[String, AnyRef]) extend
     s"Read Excel files from $path lazily"
   }
 
-  override def getProcessorSchema:String = """{"title": "ExcelReader","type": "object","properties": {
+  def getProcessorSchema:String = """{"title": "ExcelReader","type": "object","properties": {
     "__class":{"type":"string","options":{"hidden":true},"default":"spark.reader.ExcelReader"},
     "path":{"type":"string","description":"Path of the excel files"},
     "useHeader":{"type":"boolean","description":"Has header?"},
