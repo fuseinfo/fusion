@@ -60,6 +60,12 @@ class Start(taskName:String, params:java.util.Map[String, AnyRef])
           ClassUtils.getAllClasses(udfPackage.trim, null)
             .foreach(kv => registerUDF(spark, kv._1.toUpperCase, kv._2))
         )
+      case udfList:Array[_] =>
+        udfList.foreach{
+          case udfPackage:String => ClassUtils.getAllClasses(udfPackage.trim, null)
+            .foreach(kv => registerUDF(spark, kv._1.toUpperCase, kv._2))
+          case _ =>
+        }
       case _ =>
     }
     val hadoopConf = spark.sparkContext.hadoopConfiguration

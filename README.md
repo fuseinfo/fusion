@@ -24,14 +24,14 @@ tasks.
 
 #### Software Requirements
 1. JDK 8 (Supports OpenJDK and Oracle JDK)
-2. Apache Spark 2.3 / 2. 4
+2. Apache Spark 2.4.x
 3. winutils If runs on Microsoft Windows
 
 
 ## Quick Start
 1. Set environment variable SPARK_HOME if spark-submit is not in the PATH
-2. (On Linux/Mac) `tar -xzvf fusion-0.2.3-bin.tar.gz ` 
-(On Windows), unzip fusion-0.2.3-bin.zip
+2. (On Linux/Mac) `tar -xzvf fusion-0.2.4-bin.tar.gz ` 
+(On Windows), unzip fusion-0.2.4-bin.zip
 3. Run `bin/fusion-sandbox.sh` on Linux/Mac or `bin\fusion-sandbox.cmd` on Windows
 4. On web browser, open the link http://localhost:14080/ 
 
