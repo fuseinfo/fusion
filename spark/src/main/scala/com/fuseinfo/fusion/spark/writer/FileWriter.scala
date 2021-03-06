@@ -38,8 +38,7 @@ abstract class FileWriter(taskName:String, params:util.Map[String, AnyRef])
   def apply(vars: util.Map[String, String]): String = {
     val successExts = extensions.getOrElse("onSuccess", Array.empty).map{props =>
       try {
-        ClassUtils.newExtension(props("__class"), props.toMap.filter(_._1 != "__class")
-          .mapValues(VarUtils.enrichString(_, vars)))
+        ClassUtils.newExtension(props("__class"), props.toMap.filter(_._1 != "__class"))
       } catch {
         case e:Exception =>
           logger.warn("{} Unable to create an onSuccess extension", taskName, e:Any)
@@ -48,8 +47,7 @@ abstract class FileWriter(taskName:String, params:util.Map[String, AnyRef])
     }.filter(_ != null)
     val failureExts = extensions.getOrElse("onFailure", Array.empty).map{props =>
       try {
-        ClassUtils.newExtension(props("__class"), props.toMap.filter(_._1 != "__class")
-          .mapValues(VarUtils.enrichString(_, vars)))
+        ClassUtils.newExtension(props("__class"), props.toMap.filter(_._1 != "__class"))
       } catch {
         case e:Exception =>
           logger.warn("{} Unable to create an onFailure extension", taskName, e:Any)
@@ -151,9 +149,9 @@ abstract class FileWriter(taskName:String, params:util.Map[String, AnyRef])
         stats._1._3.map(kv => (kv._1 + idx) -> kv._2)
       }
 
+      val allStats = stats + ("rowCount" -> dfCount.toString)
       if (dfCount > 0) {
         val fileCount = statsWithPath.map(_._3.getOrElse("rowCount", "0").toLong).sum
-        val allStats = stats + ("rowCount" -> dfCount.toString)
         if (fileCount == dfCount) {
           statsWithPath.foreach { t =>
             scala.util.Try(fs.mkdirs(t._2.getParent))
@@ -167,7 +165,7 @@ abstract class FileWriter(taskName:String, params:util.Map[String, AnyRef])
           throw new RuntimeException(taskName + ": Record count mismatched")
         }
       } else {
-        successExts.foreach(ext => scala.util.Try(ext(stats)))
+        successExts.foreach(ext => scala.util.Try(ext(allStats)))
         if (dfCount == 0) "Completed with zero record" else "Persisted file without verification"
       }
     } catch {

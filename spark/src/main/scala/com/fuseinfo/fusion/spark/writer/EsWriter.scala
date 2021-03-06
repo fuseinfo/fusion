@@ -18,8 +18,7 @@ class EsWriter(taskName:String, params:util.Map[String, AnyRef])
   override def apply(vars:util.Map[String, String]): String = {
     val successExts = extensions.getOrElse("onSuccess", Array.empty).map{props =>
       try {
-        ClassUtils.newExtension(props("__class"), props.toMap.filter(_._1 != "__class")
-          .mapValues(VarUtils.enrichString(_, vars)))
+        ClassUtils.newExtension(props("__class"), props.toMap.filter(_._1 != "__class"))
       } catch {
         case e:Exception =>
           logger.warn("{} Unable to create an onSuccess extension", taskName, e:Any)
@@ -28,8 +27,7 @@ class EsWriter(taskName:String, params:util.Map[String, AnyRef])
     }.filter(_ != null)
     val failureExts = extensions.getOrElse("onFailure", Array.empty).map{props =>
       try {
-        ClassUtils.newExtension(props("__class"), props.toMap.filter(_._1 != "__class")
-          .mapValues(VarUtils.enrichString(_, vars)))
+        ClassUtils.newExtension(props("__class"), props.toMap.filter(_._1 != "__class"))
       } catch {
         case e:Exception =>
           logger.warn("{} Unable to create an onFailure extension", taskName, e:Any)
