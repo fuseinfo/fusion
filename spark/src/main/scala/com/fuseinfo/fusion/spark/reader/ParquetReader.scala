@@ -31,6 +31,7 @@ class ParquetReader(taskName:String, params:util.Map[String, AnyRef])
   def this(taskName:String) = this(taskName, new util.HashMap[String, AnyRef])
 
   @transient private val logger = LoggerFactory.getLogger(this.getClass)
+  private val reservedSet = Set("path","repartition", "cache", "localCheckpoint", "viewName")
 
   override def apply(vars:util.Map[String, String]): String = {
     val enrichedParams = params.filter(_._2.isInstanceOf[String])
@@ -38,7 +39,10 @@ class ParquetReader(taskName:String, params:util.Map[String, AnyRef])
     val path = SparkUtils.stdPath(enrichedParams("path"))
     val spark = SparkSession.getActiveSession.getOrElse(SparkSession.getDefaultSession.get)
     logger.info("{} Reading Parquet file from {}", taskName, path:Any)
-    val df = spark.read.parquet(path)
+    val reader = spark.read
+    enrichedParams.filterKeys{key => !reservedSet.contains(key) && !key.startsWith("__")}
+      .foreach(kv => reader.option(kv._1, kv._2))
+    val df = reader.parquet(path)
     SparkUtils.registerDataFrame(df, taskName, enrichedParams)
     s"Read Parquet files from $path lazily"
   }
@@ -48,6 +52,7 @@ class ParquetReader(taskName:String, params:util.Map[String, AnyRef])
     "path":{"type":"string","description":"Path of the Parquet files"},
     "repartition":{"type":"integer","description":"Number of partitions"},
     "cache":{"type":"string","description":"cache to memory"},
+    "localCheckpoint":{"type":"string","description":"localCheckpoint"},
     "viewName":{"type":"string","description":"View Name to be registered"}
     },"required":["__class","path"]}"""
 }
