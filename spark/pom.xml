@@ -35,7 +35,7 @@
         </license>
     </licenses>
     <properties>
-        <jetty.version>9.3.27.v20190418</jetty.version>
+        <jetty.version>9.4.41.v20210516</jetty.version>
     </properties>
     <repositories>
         <repository>
