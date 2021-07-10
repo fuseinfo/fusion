@@ -35,15 +35,6 @@
         </license>
     </licenses>
 
-    <properties>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <encoding>UTF-8</encoding>
-        <scala.version>2.11.12</scala.version>
-        <scala.compat.version>2.11</scala.compat.version>
-        <spark.version>2.4.0</spark.version>
-    </properties>
-
     <repositories>
         <repository>
             <id>local-repo</id>
@@ -80,7 +71,7 @@
         <dependency>
             <groupId>org.scalatest</groupId>
             <artifactId>scalatest_2.11</artifactId>
-            <version>3.0.4</version>
+            <version>${scalatest.version}</version>
             <scope>test</scope>
         </dependency>
 

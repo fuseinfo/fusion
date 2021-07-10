@@ -79,7 +79,7 @@ class KafkaWriter(taskName:String, params:java.util.Map[String, AnyRef])
       ByteBuffer.allocate(4).putInt(schemaRegistry.register(topic + "-value", valueSchema)).array
     else Array.emptyByteArray
     logger.info("{} Writing data to topic {}", taskName, topic:Any)
-    df2.foreachPartition{iter =>
+    df2.foreachPartition{iter: Iterator[Row] =>
       val parser = new Schema.Parser
       val valueSchema = parser.parse(valueSchemaStr)
       val keySchemaOpt = keySchemaStrOpt.map(schemaStr => parser.parse(schemaStr))

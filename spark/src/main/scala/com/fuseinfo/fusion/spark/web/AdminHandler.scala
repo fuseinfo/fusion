@@ -17,11 +17,11 @@
 package com.fuseinfo.fusion.spark.web
 
 import java.util.regex.Pattern
-
 import com.fuseinfo.fusion.spark.FusionHandler
 import com.fuseinfo.fusion.Fusion
+
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
-import org.mortbay.jetty.Request
+import org.eclipse.jetty.server.Request
 
 class AdminHandler extends FusionHandler {
   private val actionRegex = Pattern.compile("/+([^/]+)(.*)")
@@ -30,7 +30,7 @@ class AdminHandler extends FusionHandler {
 
   override def getRoles: Array[String] = Array("admin")
 
-  override def handle(target: String, request: HttpServletRequest, response: HttpServletResponse, dispatch: Int): Unit= {
+  override def handle(target: String, r:Request, request: HttpServletRequest, response: HttpServletResponse): Unit = {
     val matcher = actionRegex.matcher(target)
     if (matcher.matches()) {
       matcher.group(1) match {
@@ -39,16 +39,12 @@ class AdminHandler extends FusionHandler {
           val taskName = remain.substring(remain.indexWhere(c => c != '/'))
           val paramMap = request.getParameterMap
           paramMap.get("status") match {
-            case Array(some:String) =>
+            case Array(some: String) =>
               val result = setStatus(taskName, some)
               response.setStatus(HttpServletResponse.SC_OK)
               val output = response.getWriter
               output.write(result)
-              request match {
-                case r: Request => r.setHandled(true)
-                case _ =>
-              }
-            case _ =>
+              r.setHandled(true)
           }
       }
     }

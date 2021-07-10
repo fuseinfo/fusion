@@ -20,7 +20,6 @@ import java.nio.file.{FileSystems, Files, Paths}
 import java.util
 import java.util.Collections
 import java.util.regex.Pattern
-
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.dataformat.yaml.{YAMLFactory, YAMLGenerator}
@@ -28,9 +27,9 @@ import com.fuseinfo.common.conf.ConfUtils
 import com.fuseinfo.fusion.Fusion
 import com.fuseinfo.fusion.spark.FusionHandler
 import com.fuseinfo.fusion.util.ClassUtils
-import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
-import org.mortbay.jetty.Request
+import org.eclipse.jetty.server.Request
 
+import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 import scala.collection.JavaConversions._
 
 class ConfigHandler extends FusionHandler {
@@ -47,7 +46,7 @@ class ConfigHandler extends FusionHandler {
 
   override def getRoles: Array[String] = Array("admin")
 
-  private val funcGroupList = ClassUtils.getAllClasses(null, classOf[(util.Map[String, String] => String)])
+  private val funcGroupList = ClassUtils.getAllClasses(null, classOf[util.Map[String, String] => String])
     .filter{case (_, clazz) => scala.util.Try(clazz.getMethod("getProcessorSchema")).isSuccess}
     .map { case (className, clazz) =>
       val packName = clazz.getPackage.getName
@@ -58,7 +57,7 @@ class ConfigHandler extends FusionHandler {
 
   private val actionRegex = Pattern.compile("/+([^/]+)(.*)")
 
-  override def handle(target: String, request: HttpServletRequest, response: HttpServletResponse, dispatch: Int): Unit = {
+  override def handle(target: String, r:Request, request: HttpServletRequest, response: HttpServletResponse): Unit = {
 
     val matcher = actionRegex.matcher(target)
     if (matcher.matches()) {
@@ -72,10 +71,7 @@ class ConfigHandler extends FusionHandler {
         case "upload" => upload(request, response)
         case _ => false
       }
-      request match {
-        case r: Request => r.setHandled(result)
-        case _ =>
-      }
+      r.setHandled(result)
     }
   }
 
@@ -90,7 +86,7 @@ class ConfigHandler extends FusionHandler {
           "</div>"
       }.mkString(""))
 
-    if (userProcessors.length > 0) {
+    if (userProcessors.nonEmpty) {
       writer.write("<button class='btn btn-primary btn-block' data-toggle='collapse' data-target='#userProcessor'>User Processors</button><div id='userProcessor' class='collapse'>")
       writer.write(userProcessors)
       writer.write("</div>")
@@ -118,7 +114,7 @@ class ConfigHandler extends FusionHandler {
   private def download(request: HttpServletRequest, response: HttpServletResponse): Boolean = {
     response.setContentType("application/octet-stream")
     response.setHeader("Content-Disposition", "attachment; filename=Fusion_" + System.currentTimeMillis + ".yaml")
-    val paramMap = request.getParameterMap.asInstanceOf[java.util.Map[String, Array[String]]]
+    val paramMap = request.getParameterMap
     val rootNode = mapperYaml.createObjectNode()
     paramMap.get("__list")(0).split("\\|").map(_.trim).foreach { taskName =>
       val jsonNode = mapperJson.readTree(paramMap.get(taskName)(0))
@@ -133,7 +129,7 @@ class ConfigHandler extends FusionHandler {
   }
 
   private def save(request: HttpServletRequest, response: HttpServletResponse): Boolean = {
-    val paramMap = request.getParameterMap.asInstanceOf[java.util.Map[String, Array[String]]]
+    val paramMap = request.getParameterMap
     paramMap.get("__list")(0).split("\\|").map(_.trim).foreach { taskName =>
       val jsonNode = mapperJson.readTree(paramMap.get(taskName)(0))
       Fusion.addTask(taskName, jsonNode)
@@ -199,7 +195,7 @@ class ConfigHandler extends FusionHandler {
       val br = new java.io.BufferedReader(new java.io.InputStreamReader(request.getInputStream))
       val boundary = br.readLine
       val header = br.readLine
-      while (br.readLine.length >0){}
+      while (br.readLine.nonEmpty){}
       val sb = new StringBuilder
       var line = ""
       while (line != null && !line.startsWith(boundary)) {

@@ -18,13 +18,13 @@ package com.fuseinfo.fusion.spark.web
 
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneId, ZonedDateTime}
-
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fuseinfo.fusion.Fusion
 import com.fuseinfo.fusion.spark.FusionHandler
+
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 import org.apache.commons.lang.StringEscapeUtils
-import org.mortbay.jetty.Request
+import org.eclipse.jetty.server.Request
 
 class LogHandler extends FusionHandler {
   override def getContext: String = "/log"
@@ -33,7 +33,7 @@ class LogHandler extends FusionHandler {
 
   private val mapper = new ObjectMapper
 
-  override def handle(target: String, request: HttpServletRequest, response: HttpServletResponse, dispatch: Int): Unit = {
+  override def handle(target: String, r:Request, request: HttpServletRequest, response: HttpServletResponse): Unit = {
     response.setStatus(HttpServletResponse.SC_OK)
     val writer = response.getWriter
     val size = Fusion.getLogSize
@@ -59,9 +59,6 @@ class LogHandler extends FusionHandler {
     }
     root.set("data", data)
     writer.write(mapper.writeValueAsString(root))
-    request match {
-      case r: Request => r.setHandled(true)
-      case _ =>
-    }
+    r.setHandled(true)
   }
 }

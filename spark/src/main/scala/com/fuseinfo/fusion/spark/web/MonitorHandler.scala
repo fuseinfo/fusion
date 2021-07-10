@@ -17,13 +17,13 @@
 package com.fuseinfo.fusion.spark.web
 
 import java.util.regex.Pattern
-
 import com.fuseinfo.fusion.spark.FusionHandler
 import com.fuseinfo.fusion.Fusion
+
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 import org.apache.commons.lang.StringEscapeUtils
 import org.apache.spark.sql.SparkSession
-import org.mortbay.jetty.Request
+import org.eclipse.jetty.server.Request
 
 class MonitorHandler extends FusionHandler {
 
@@ -40,7 +40,7 @@ class MonitorHandler extends FusionHandler {
 
   private val actionRegex = Pattern.compile("/+([^/]+)(.*)")
 
-  override def handle(target: String, request: HttpServletRequest, response: HttpServletResponse, dispatch: Int): Unit = {
+  override def handle(target: String, r:Request, request: HttpServletRequest, response: HttpServletResponse): Unit = {
     val matcher = actionRegex.matcher(target)
     if (matcher.matches()) {
       response.setStatus(HttpServletResponse.SC_OK)
@@ -51,10 +51,7 @@ class MonitorHandler extends FusionHandler {
         case _ => ""
       }
       output.write(result)
-      request match {
-        case r: Request => r.setHandled(true)
-        case _ =>
-      }
+      r.setHandled(true)
     }
   }
 

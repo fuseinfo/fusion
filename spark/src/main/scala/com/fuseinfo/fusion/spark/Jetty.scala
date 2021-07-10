@@ -17,15 +17,20 @@
 package com.fuseinfo.fusion.spark
 
 import java.io.IOException
-import java.security.Principal
-
+import java.security.KeyStore
 import com.fuseinfo.fusion.util.{ClassUtils, VarUtils}
+
 import javax.naming.Context
 import javax.naming.directory.{InitialDirContext, SearchControls}
-import org.mortbay.jetty.bio.SocketConnector
-import org.mortbay.jetty.{Request, Server}
-import org.mortbay.jetty.handler.{AbstractHandler, ContextHandler, HandlerList, ResourceHandler}
-import org.mortbay.jetty.security._
+import org.eclipse.jetty.server._
+import org.eclipse.jetty.security._
+import org.eclipse.jetty.security.authentication.BasicAuthenticator
+import org.eclipse.jetty.server.handler.{AbstractHandler, ContextHandler, HandlerList, ResourceHandler}
+import org.eclipse.jetty.util.security.{Constraint, Credential}
+import org.eclipse.jetty.util.ssl.SslContextFactory
+
+import javax.security.auth.Subject
+import javax.servlet.ServletRequest
 
 import scala.collection.JavaConversions._
 
@@ -46,29 +51,44 @@ class Jetty(taskName:String, params:java.util.Map[String, AnyRef])
       case num:Any if num.toString.matches("\\d+") => Some(num.toString.toInt)
       case _ => None
     }
-    val connector = params.get("keyStore") match {
-      case file:String =>
-        val connector = new SslSocketConnector
-
-        val keyPass = params.get("keyStorePassword")
-        connector.setKeystore(file)
-        connector.setKeyPassword(keyPass.toString)
-        connector.setPort(defaultPort.getOrElse(14443))
-        connector
+    val server = new Server()
+    val httpConfig = new HttpConfiguration()
+    val connector = (params.get("keyStore"), params.get("keyStorePassword")) match {
+      case (file:String, keyPass:String) =>
+        val sslContextFactory = new SslContextFactory()
+        val keyStore = KeyStore.getInstance(KeyStore.getDefaultType)
+        keyStore.load(getClass.getClassLoader.getResourceAsStream(file), keyPass.toCharArray)
+        sslContextFactory.setKeyStore(keyStore)
+        httpConfig.addCustomizer(new SecureRequestCustomizer())
+        params.get("keyManagerPassword") match {
+          case keyManagerPass: String => sslContextFactory.setKeyManagerPassword(keyManagerPass)
+          case _ =>
+        }
+        val http = new ServerConnector(server, new SslConnectionFactory(sslContextFactory, "http/1.1"), new HttpConnectionFactory(httpConfig))
+        http.setPort(defaultPort.getOrElse(14443))
+        http
       case _ =>
-        val connector = new SocketConnector
-        connector.setPort(defaultPort.getOrElse(14080))
-        connector
+        val http = new ServerConnector(server, new HttpConnectionFactory(httpConfig))
+        http.setPort(defaultPort.getOrElse(14080))
+        http
+    }
+    try {
+      connector.open()
+    } catch {
+      case e:Exception =>
+        connector.setPort(0)
+        connector.open()
     }
 
     val staticHandler = new ResourceHandler
     staticHandler.setResourceBase(getClass.getClassLoader.getResource("static").toExternalForm)
 
     val handlerList = new HandlerList
+    handlerList.addHandler(staticHandler)
     val mappings = ClassUtils.getAllClasses(null, classOf[FusionHandler]).map{case (name, clazz) =>
       val context = new ContextHandler
       val handler = clazz.newInstance().asInstanceOf[FusionHandler]
-      context.addHandler(handler)
+      context.setHandler(handler)
       context.setContextPath(handler.getContext)
       handlerList.addHandler(context)
       val roles = handler.getRoles
@@ -86,32 +106,19 @@ class Jetty(taskName:String, params:java.util.Map[String, AnyRef])
 
     val handler = enrichedParams.get("login") match {
       case Some("ldap") =>
-        val securityHandler = new SecurityHandler
-        val userRealm = new LdapUserRealm(enrichedParams.filterKeys(_.startsWith("ldap.")).toMap)
+        val securityHandler = new ConstraintSecurityHandler()
+        val loginService = new LdapLoginService(enrichedParams.filterKeys(_.startsWith("ldap.")).toMap)
         securityHandler.setAuthMethod(Constraint.__BASIC_AUTH)
         val authenticator = new BasicAuthenticator
         securityHandler.setAuthenticator(authenticator)
-        securityHandler.setUserRealm(userRealm)
-        securityHandler.setHandler(handlerList)
-        securityHandler.setConstraintMappings(mappings.toArray)
-        securityHandler
-      case Some("file") =>
-        val securityHandler = new SecurityHandler
-        val userRealm = new HashUserRealm()
-        userRealm.put("admin", "admin")
-        userRealm.addUserToRole("admin", "admin")
-        securityHandler.setAuthMethod(Constraint.__BASIC_AUTH)
-        val authenticator = new BasicAuthenticator
-        securityHandler.setAuthenticator(authenticator)
-        securityHandler.setUserRealm(userRealm)
+        securityHandler.setLoginService(loginService)
         securityHandler.setHandler(handlerList)
         securityHandler.setConstraintMappings(mappings.toArray)
         securityHandler
       case _ => handlerList
     }
 
-    val server = new Server
-    server.setHandlers(Array(staticHandler, handler))
+    server.setHandler(handler)
     try {
       connector.open()
     } catch{
@@ -133,87 +140,75 @@ class Jetty(taskName:String, params:java.util.Map[String, AnyRef])
     "keyStorePassword":{"type":"string","description":"javax.net.ssl.keyStorePassword"}
     },"required":["__class"]}"""
 
-class LdapUserRealm(props: Map[String, String]) extends UserRealm {
+class LdapLoginService(props: Map[String, String]) extends LoginService {
+  var identityService: IdentityService = new DefaultIdentityService()
 
- private val mappings = props.filterKeys(_.startsWith("ldap.group.")).map{kv =>
-   kv._1.substring(11) -> kv._2.split(",").map(_.trim).toSet
- }
+  override def getName: String = "LdapLoginService"
 
- override def getName: String = "LdapUserRealm"
+  override def setIdentityService(identityService: IdentityService): Unit = this.identityService = identityService
 
- override def getPrincipal(username: String): Principal = new Principal {
-   override def getName: String = username
- }
+  override def getIdentityService: IdentityService = identityService
 
- override def authenticate(username: String, credentials: Any, request: Request): Principal = {
-   val env = new java.util.Hashtable[String, String]
-   try {
-     env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
-     env.put(Context.SECURITY_AUTHENTICATION, "Simple")
-     env.put("com.sun.jndi.ldap.connect.pool", "true")
-     env.put(Context.PROVIDER_URL, props("ldap.provider.url"))
-     env.put(Context.SECURITY_PRINCIPAL, username)
-     env.put(Context.SECURITY_CREDENTIALS, credentials.toString)
-     val context = new InitialDirContext(env)
-     val filter = String.format("(sAMAccountName=%s)", username.substring(username.indexOf('\\') + 1))
-     val cons = new SearchControls
-     cons.setSearchScope(SearchControls.SUBTREE_SCOPE)
-     cons.setReturningAttributes(Array[String]("memberOf"))
-     val baseName = props.getOrElse("ldap.base.dc", "")
-     val results = context.search(baseName, filter, cons).nextElement().getAttributes
-     val memberOf = results.get("memberOf").getAll
-     val roles = memberOf.map { item =>
-       val str = item.toString
-       val len = str.length
-       var i = str.indexOf("CN=") + 3
-       val sb = new StringBuilder
-       while (i < len) {
-         val c = str.charAt(i)
-         if (c == '\\' && i < len - 1) {
-           i += 1
-           sb.append(str.charAt(i))
-         } else if (c == ',') {
-           i = len
-         } else {
-           sb.append(c)
-         }
-         i += 1
-       }
-       mappings.getOrElse(sb.toString, Set.empty[String])
-     }.reduceLeft(_ ++ _)
-     new KnownUser(username, roles)
-   } catch {
-     case _:Exception => null
-   }
- }
+  private val mappings = props.filterKeys(_.startsWith("ldap.group.")).map{kv =>
+    kv._1.substring(11) -> kv._2.split(",").map(_.trim).toSet
+  }
 
- override def reauthenticate(user: Principal): Boolean = user.isInstanceOf[KnownUser]
+  override def login(username: String, info: Any, request: ServletRequest): UserIdentity = {
+    val env = new java.util.Hashtable[String, String]
+    try {
+      env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
+      env.put(Context.SECURITY_AUTHENTICATION, "Simple")
+      env.put("com.sun.jndi.ldap.connect.pool", "true")
+      env.put(Context.PROVIDER_URL, props("ldap.provider.url"))
+      env.put(Context.SECURITY_PRINCIPAL, username)
+      env.put(Context.SECURITY_CREDENTIALS, info.toString)
+      val context = new InitialDirContext(env)
+      val filter = String.format("(sAMAccountName=%s)", username.substring(username.indexOf('\\') + 1))
+      val cons = new SearchControls
+      cons.setSearchScope(SearchControls.SUBTREE_SCOPE)
+      cons.setReturningAttributes(Array[String]("memberOf"))
+      val baseName = props.getOrElse("ldap.base.dc", "")
+      val results = context.search(baseName, filter, cons).nextElement().getAttributes
+      val memberOf = results.get("memberOf").getAll
+      val roles = memberOf.map { item =>
+        val str = item.toString
+        val len = str.length
+        var i = str.indexOf("CN=") + 3
+        val sb = new StringBuilder
+        while (i < len) {
+          val c = str.charAt(i)
+          if (c == '\\' && i < len - 1) {
+            i += 1
+            sb.append(str.charAt(i))
+          } else if (c == ',') {
+            i = len
+          } else {
+            sb.append(c)
+          }
+          i += 1
+        }
+        mappings.getOrElse(sb.toString, Set.empty[String])
+      }.reduceLeft(_ ++ _)
+      val credential = info match {
+        case _credential: Credential => _credential
+        case _ => Credential.getCredential(String.valueOf(info))
+      }
+      val userPrincipal = new MappedLoginService.KnownUser(username, credential)
+      val subject = new Subject()
+      subject.getPrincipals().add(userPrincipal)
+      subject.getPrivateCredentials().add(credential)
+      subject.setReadOnly()
+      identityService.newUserIdentity(subject, userPrincipal, roles.toArray)
+    } catch {
+      case _:Exception => null
+    }
+  }
 
- override def isUserInRole(user: Principal, role: String): Boolean = user match {
-   case knownUser: KnownUser => knownUser.roles.contains(role)
-   case _ => false
- }
+  override def validate(user: UserIdentity): Boolean = true
 
- override def disassociate(user: Principal): Unit = {}
+  override def logout(user: UserIdentity): Unit = {}
+  }
 
- override def pushRole(user: Principal, role: String): Principal = new WrappedUser(user, role)
-
- override def popRole(user: Principal): Principal = user match {
-   case wrappedUser: WrappedUser => wrappedUser.principal
-   case _ => user
- }
-
- override def logout(user: Principal): Unit = {}
-}
-
-class KnownUser(userName:String, val roles:Set[String]) extends Principal {
- override def getName: String = userName
-}
-
-class WrappedUser(val principal: Principal, role: String) extends KnownUser(principal.getName, principal match {
- case user: KnownUser => user.roles + role
- case _ => Set(role)
-})
 }
 
 trait FusionHandler extends AbstractHandler {
