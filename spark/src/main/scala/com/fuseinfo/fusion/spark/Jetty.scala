@@ -75,7 +75,7 @@ class Jetty(taskName:String, params:java.util.Map[String, AnyRef])
     try {
       connector.open()
     } catch {
-      case e:Exception =>
+      case _:Exception =>
         connector.setPort(0)
         connector.open()
     }
@@ -193,7 +193,7 @@ class LdapLoginService(props: Map[String, String]) extends LoginService {
         case _credential: Credential => _credential
         case _ => Credential.getCredential(String.valueOf(info))
       }
-      val userPrincipal = new MappedLoginService.KnownUser(username, credential)
+      val userPrincipal = new AbstractLoginService.UserPrincipal(username, credential)
       val subject = new Subject()
       subject.getPrincipals().add(userPrincipal)
       subject.getPrivateCredentials().add(credential)
