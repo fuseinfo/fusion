@@ -75,7 +75,7 @@
                             <descriptors>
                                 <descriptor>src/assembly/bin.xml</descriptor>
                             </descriptors>
-                            <finalName>fusion-${version}</finalName>
+                            <finalName>fusion-${project.version}</finalName>
                         </configuration>
                     </execution>
                 </executions>

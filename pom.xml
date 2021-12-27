@@ -34,7 +34,6 @@
     </licenses>
     <modules>
         <module>core</module>
-        <module>spark-cobol</module>
         <module>spark</module>
         <module>assembly</module>
     </modules>
@@ -44,10 +43,11 @@
         <encoding>UTF-8</encoding>
         <scala.version>2.11.12</scala.version>
         <scala.compat.version>2.11</scala.compat.version>
-        <spark.version>2.4.4</spark.version>
+        <spark.version>2.4.8</spark.version>
         <hadoop.version>2.7.3</hadoop.version>
         <kafka.version>2.0.0</kafka.version>
         <confluent.version>5.0.0</confluent.version>
+        <elasticsearch.version>7.16.2</elasticsearch.version>
         <scalatest.version>3.0.3</scalatest.version>
     </properties>
     <dependencies>

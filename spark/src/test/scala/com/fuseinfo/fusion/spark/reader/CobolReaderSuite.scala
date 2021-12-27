@@ -20,7 +20,7 @@ import scala.collection.JavaConverters._
 
 class CobolReaderSuite extends FunSuite with SparkBase  {
   ignore("Read mainframe file"){
-    val reader = new CobolReader("MAINFRAME_READER", Map[String, AnyRef]("path" -> "examples/mainframe", "copybook" ->
+    val reader = new CobolReader("MAINFRAME_READER", Map[String, AnyRef]("path" -> "examples/mainframe", "copybook_contents" ->
       """        01  CUSTOMER-RECORD.
            05 CUSTOMER-ID            PIC 9(5) COMP-3.
            05 CUSTOMER-NAME.

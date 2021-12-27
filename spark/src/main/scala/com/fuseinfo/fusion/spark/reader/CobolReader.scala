@@ -29,8 +29,9 @@ class CobolReader(taskName:String, params:util.Map[String, AnyRef])
   def this(taskName:String) = this(taskName, new util.HashMap[String, AnyRef])
 
   @transient private val logger = LoggerFactory.getLogger(this.getClass)
-  private val optionSet = Set("copybook", "binaryformat", "bookname", "copybookformat", "emptyvalue", "font",
-    "nullvalue","number","recordformat","split","tree")
+  private val optionSet = Set("copybook", "copybook_contents", "encoding", "ebcdic_code_page", "record_format",
+    "record_length", "block_length", "records_per_block", "schema_retention_policy", "generate_record_id",
+    "floating_point_format", "is_rdw_big_endian", "rdw_adjustment", "segment_field", "segment_filter")
 
   override def apply(vars:util.Map[String, String]): String = {
     val enrichedParams = params.filter(_._2.isInstanceOf[String])
@@ -38,7 +39,7 @@ class CobolReader(taskName:String, params:util.Map[String, AnyRef])
     val path = SparkUtils.stdPath(enrichedParams("path"))
     val spark = SparkSession.getActiveSession.getOrElse(SparkSession.getDefaultSession.get)
     logger.info("{} Reading mainframe file from {}", taskName, path:Any)
-    val reader = spark.read.format("com.fuseinfo.spark.sql.sources.v2.cobol")
+    val reader = spark.read.format("cobol")
     params.filter(p => optionSet.contains(p._1)).foreach(kv => reader.option(kv._1, kv._2.toString))
     val df = reader.load(path)
     SparkUtils.registerDataFrame(df, taskName, enrichedParams)
@@ -48,18 +49,23 @@ class CobolReader(taskName:String, params:util.Map[String, AnyRef])
   def getProcessorSchema:String = """{"title": "CobolReader","type": "object","properties": {
     "__class":{"type":"string","options":{"hidden":true},"default":"spark.reader.CobolReader"},
     "path":{"type":"string","description":"Path of the COBOL files"},
-    "copybook":{"type":"string","description":"COBOL Copybook"},
-    "bookname":{"type":"string","description":"The common prefix of field names to be ignored"},
-    "recordformat":{"type":"string","description":"Record format of the file: F, V, FB, VB"},
-    "binaryformat":{"type":"string","format":"number","description":"Binary format: 0 - Intel; 2 - Mainframe"},
-    "font":{"type":"string","description":"code page"},
-    "copybookformat":{"type":"string","format":"number","description":"COBOL Copybook format"},
-    "emptyvalue":{"type":"string","description":"use this string when empty is found},
-    "nullvalue":{"type":"string","description":"use this string when null is found"},
-    "number":{"type":"string","format":"number","description":"How to cast numbers: decimal, double, string, mixed"},
-    "tree":{"type":"string","format":"number","description":"Whether use tree/nested format"},
+    "copybook_contents":{"type":"string","description":"COBOL Copybook"},
+    "copybook":{"type":"string","description":"COBOL Copybook location"},
+    "encoding":{"type":"string","format":"number","description":"default is ebcdic. can be ascii"},
+    "ebcdic_code_page":{"type":"string","description":"code page"},
+    "record_format":{"type":"string","description":"Record format of the file: F, V, FB, VB"},
+    "record_length":{"type":"string","format":"number","description":"Record Length"},
+    "block_length":{"type":"string","format":"number","description":"Block Length"},
+    "records_per_block":{"type":"string","format":"number","description":"Records per Block"},
+    "schema_retention_policy":{"type":"string","description":"collapse_root or keep_original"},
+    "generate_record_id":{"type":"boolean","description":"Generate Record ID"},
+    "floating_point_format":{"type":"string","format":"number","description":"Floating point format"},
+    "is_rdw_big_endian":{"type":"boolean","format":"number","description":"is rdw big endian"},
+    "rdw_adjustment":{"type":"string","format":"number","description":"rdw adjustment"},
+    "segment_field":{"type":"string","format":"number","description":"segment field"},
+    "segment_filter":{"type":"string","format":"number","description":"segment filter"},
     "repartition":{"type":"integer","description":"Number of partitions"},
     "cache":{"type":"string","description":"cache the DataFrame?"},
     "viewName":{"type":"string","description":"View Name to be registered"}
-    },"required":["__class","path","copybook"]}"""
+    },"required":["__class","path"]}"""
 }

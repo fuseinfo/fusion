@@ -254,7 +254,7 @@ public class SmbFileSystem extends FileSystem {
             long modTime = smbFile.getDate();
             return new FileStatus(length, isDir, 1, DEFAULT_BLOCK_SIZE, modTime, path);
         } catch (Exception e) {
-            throw new IOException(e);
+            throw new FileNotFoundException(e.getMessage());
         }
     }
 }
