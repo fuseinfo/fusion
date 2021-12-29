@@ -38,7 +38,7 @@ class CsvWriterSuite extends FunSuite with DataWriterBase {
     val is = fs.open(csvFiles.head.getPath)
     val br = new BufferedReader(new InputStreamReader(is))
     val out = Stream.continually(br.readLine).takeWhile(_ != null).sorted
-    assert(out(0).startsWith("1,foo,1970-01-01,12.34,2018-01-0"))
+    assert(out.head.startsWith("1,foo,1970-01-01,12.34,2018-01-0"))
     assert(out(1).startsWith("2,bar,1980-02-02,56.78,2018-02-0"))
     assert(out(2) == "id,name,dob,amt,lud")
   }

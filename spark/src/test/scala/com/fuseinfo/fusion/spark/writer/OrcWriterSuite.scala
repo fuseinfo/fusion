@@ -18,7 +18,7 @@ import java.time.LocalDate
 
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.orc.OrcFile
-import org.apache.orc.storage.ql.exec.vector._
+import org.apache.hadoop.hive.ql.exec.vector._
 import org.scalatest.FunSuite
 import scala.collection.JavaConverters._
 
@@ -58,11 +58,11 @@ class OrcWriterSuite extends FunSuite with DataWriterBase {
             ts)
         }
     }.toList.sortBy(_._1)
-    assert(out(0)._1 === 1)
-    assert(out(0)._2 === "foo")
-    assert(out(0)._3.toString == "1970-01-01")
-    assert(out(0)._4 === new java.math.BigDecimal("12.34"))
-    assert(out(0)._5.toString.startsWith("2018-01-0"))
+    assert(out.head._1 === 1)
+    assert(out.head._2 === "foo")
+    assert(out.head._3.toString == "1970-01-01")
+    assert(out.head._4 === new java.math.BigDecimal("12.34"))
+    assert(out.head._5.toString.startsWith("2018-01-0"))
     assert(out(1)._1 === 2)
     assert(out(1)._2 === "bar")
     assert(out(1)._3.toString == "1980-02-02")

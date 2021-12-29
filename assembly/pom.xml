@@ -19,12 +19,12 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>fusion-parent_2.11</artifactId>
+        <artifactId>fusion-parent_2.12</artifactId>
         <groupId>com.fuseinfo.fusion</groupId>
-        <version>0.2.4</version>
+        <version>0.3.2</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>fusion-assembly_2.11</artifactId>
+    <artifactId>fusion-assembly_2.12</artifactId>
     <name>${project.artifactId}</name>
     <description>Fusion Project Assembly</description>
     <packaging>pom</packaging>

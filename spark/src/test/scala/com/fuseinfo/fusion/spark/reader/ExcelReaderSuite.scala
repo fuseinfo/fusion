@@ -22,7 +22,7 @@ class ExcelReaderSuite extends FunSuite with SparkBase {
 
   test("Read simple excel 97 file") {
     val reader = new ExcelReader("EXCEL_READER",
-      Map[String, AnyRef]("path" -> "examples/xls", "useHeader" -> "true").asJava)
+      Map[String, AnyRef]("path" -> "examples/xls", "header" -> "true").asJava)
     reader(vars)
     val fixedDF = spark.table("EXCEL_READER")
     assert(fixedDF.count === 150)
@@ -32,7 +32,7 @@ class ExcelReaderSuite extends FunSuite with SparkBase {
 
   test("Read simple excel 2007 file") {
     val reader = new ExcelReader("EXCEL_READER2",
-      Map[String, AnyRef]("path" -> "examples/xlsx", "useHeader" -> "true").asJava)
+      Map[String, AnyRef]("path" -> "examples/xlsx", "header" -> "true").asJava)
     reader(vars)
     val fixedDF = spark.table("EXCEL_READER2")
     assert(fixedDF.count === 150)

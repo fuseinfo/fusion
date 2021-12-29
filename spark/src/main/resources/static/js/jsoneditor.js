@@ -2207,6 +2207,7 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
           'c',
           'c++',
           'cpp',
+          'cobol',
           'coffee',
           'csharp',
           'css',

@@ -16,7 +16,7 @@ package com.fuseinfo.fusion.spark
 
 import com.fuseinfo.fusion.spark.reader.KafkaReader
 import com.fuseinfo.fusion.spark.writer.{DataWriterBase, KafkaWriter}
-import net.manub.embeddedkafka.{EmbeddedKafka, EmbeddedKafkaConfig}
+import io.github.embeddedkafka.{EmbeddedKafka, EmbeddedKafkaConfig}
 import org.scalatest.FunSuite
 
 class KafkaReaderWriterSuite extends FunSuite with DataWriterBase with EmbeddedKafka{

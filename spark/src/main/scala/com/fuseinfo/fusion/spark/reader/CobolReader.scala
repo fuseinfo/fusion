@@ -49,7 +49,8 @@ class CobolReader(taskName:String, params:util.Map[String, AnyRef])
   def getProcessorSchema:String = """{"title": "CobolReader","type": "object","properties": {
     "__class":{"type":"string","options":{"hidden":true},"default":"spark.reader.CobolReader"},
     "path":{"type":"string","description":"Path of the COBOL files"},
-    "copybook_contents":{"type":"string","description":"COBOL Copybook"},
+    "copybook_contents":{"type":"string","format":"cobol","description":"COBOL Copybook",
+                         "options":{"ace":{"useSoftTabs":true,"maxLines":16}}},
     "copybook":{"type":"string","description":"COBOL Copybook location"},
     "encoding":{"type":"string","format":"number","description":"default is ebcdic. can be ascii"},
     "ebcdic_code_page":{"type":"string","description":"code page"},
@@ -61,7 +62,7 @@ class CobolReader(taskName:String, params:util.Map[String, AnyRef])
     "generate_record_id":{"type":"boolean","description":"Generate Record ID"},
     "floating_point_format":{"type":"string","format":"number","description":"Floating point format"},
     "is_rdw_big_endian":{"type":"boolean","format":"number","description":"is rdw big endian"},
-    "rdw_adjustment":{"type":"string","format":"number","description":"rdw adjustment"},
+    "rdw_adjustment":{"type":"string","format":"number","description":"RDW adjustment"},
     "segment_field":{"type":"string","format":"number","description":"segment field"},
     "segment_filter":{"type":"string","format":"number","description":"segment filter"},
     "repartition":{"type":"integer","description":"Number of partitions"},

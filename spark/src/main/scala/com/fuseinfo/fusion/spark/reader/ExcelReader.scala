@@ -31,7 +31,7 @@ class ExcelReader (taskName:String, params:util.Map[String, AnyRef])
   def this(taskName:String) = this(taskName, new util.HashMap[String, AnyRef])
 
   @transient private val logger = LoggerFactory.getLogger(this.getClass)
-  private val optionSet = Set("useHeader", "dataAddress", "treatEmptyValuesAsNulls", "inferSchema",
+  private val optionSet = Set("header", "dataAddress", "treatEmptyValuesAsNulls", "inferSchema",
     "addColorColumns", "timestampFormat", "maxRowsInMemory","excerptSize","workbookPassword")
 
   override def apply(vars: util.Map[String, String]): String = {
@@ -63,7 +63,7 @@ class ExcelReader (taskName:String, params:util.Map[String, AnyRef])
   def getProcessorSchema:String = """{"title": "ExcelReader","type": "object","properties": {
     "__class":{"type":"string","options":{"hidden":true},"default":"spark.reader.ExcelReader"},
     "path":{"type":"string","description":"Path of the excel files"},
-    "useHeader":{"type":"boolean","description":"Has header?"},
+    "header":{"type":"boolean","description":"Has header?"},
     "dataAddress":{"type":"string","description":"Range of data, such as 'Sheet1'!A1:C4"},
     "treatEmptyValuesAsNulls":{"type":"boolean","description":"Treat empty values as nulls"},
     "inferSchema":{"type":"boolean","description":"Infer Schema?"},
@@ -75,5 +75,5 @@ class ExcelReader (taskName:String, params:util.Map[String, AnyRef])
     "repartition":{"type":"string","format":"number","description":"Number of partitions"},
     "cache":{"type":"string","description":"cache the DataFrame?"},
     "viewName":{"type":"string","description":"View Name to be registered"}
-    },"required":["__class","path","useHeader"]}"""
+    },"required":["__class","path","header"]}"""
 }

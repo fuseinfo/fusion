@@ -23,13 +23,6 @@
     <includeBaseDirectory>true</includeBaseDirectory>
     <fileSets>
         <fileSet>
-            <directory>${project.build.directory}/lib</directory>
-            <outputDirectory>lib</outputDirectory>
-            <includes>
-                <include>*.*</include>
-            </includes>
-        </fileSet>
-        <fileSet>
             <directory>${project.parent.basedir}/bin</directory>
             <outputDirectory>bin</outputDirectory>
             <fileMode>0755</fileMode>
@@ -80,4 +73,48 @@
             </includes>
         </fileSet>
     </fileSets>
+    <dependencySets>
+        <dependencySet>
+            <outputDirectory>lib</outputDirectory>
+            <unpack>false</unpack>
+            <scope>runtime</scope>
+            <excludes>
+                <exclude>io.airlift:aircompressor</exclude>
+                <exclude>org.jetbrains:annotations</exclude>
+                <exclude>org.antlr:antlr4-runtime</exclude>
+                <exclude>commons-cli:commons-cli</exclude>
+                <exclude>org.apache.commons:commons-lang3</exclude>
+                <exclude>commons-lang:commons-lang</exclude>
+                <exclude>commons-logging:commons-logging</exclude>
+                <exclude>org.apache.commons:commons-math3</exclude>
+                <exclude>org.apache.commons:commons-text</exclude>
+                <exclude>com.google.guava:guava</exclude>
+                <exclude>org.apache.hive:hive-storage-api</exclude>
+                <exclude>org.apache.htrace:htrace-core4</exclude>
+                <exclude>com.fasterxml.jackson.core:jackson-annotations</exclude>
+                <exclude>com.fasterxml.jackson.dataformat:jackson-dataformat-yaml</exclude>
+                <exclude>com.fasterxml.jackson.module:jackson-module-scala_2.12</exclude>
+                <exclude>jakarta.annotation:jakarta.annotation-api</exclude>
+                <exclude>org.glassfish.hk2.external:jakarta.inject</exclude>
+                <exclude>jakarta.ws.rs:jakarta.ws.rs-api</exclude>
+                <exclude>javax.xml.bind:jaxb-api</exclude>
+                <exclude>org.glassfish.jersey.core:jersey-common</exclude>
+                <exclude>com.google.code.findbugs:jsr305</exclude>
+                <exclude>org.typelevel:macro-compat_2.12</exclude>
+                <exclude>io.dropwizard.metrics:metrics-core</exclude>
+                <exclude>org.glassfish.hk2:osgi-resource-locator</exclude>
+                <exclude>com.thoughtworks.paranamer:paranamer</exclude>
+                <exclude>com.google.protobuf:protobuf-java</exclude>
+                <exclude>org.scala-lang.modules:scala-collection-compat_2.12</exclude>
+                <exclude>com.chuusai:shapeless_2.12</exclude>
+                <exclude>org.slf4j:slf4j-api</exclude>
+                <exclude>org.yaml:snakeyaml</exclude>
+                <exclude>org.threeten:threeten-extra</exclude>
+                <exclude>org.tukaani:xz</exclude>
+                <exclude>com.github.luben:zstd-jni</exclude>
+                <exclude>org.apache.hadoop:*</exclude>
+                <exclude>org.apache.orc:*</exclude>
+            </excludes>
+        </dependencySet>
+    </dependencySets>
 </assembly>
