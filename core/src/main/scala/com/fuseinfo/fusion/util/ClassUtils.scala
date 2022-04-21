@@ -17,46 +17,21 @@
 package com.fuseinfo.fusion.util
 
 import java.lang.reflect.Modifier
-import java.net.URI
-
-import com.google.common.collect.{ImmutableMap, ImmutableSet, ImmutableSortedSet}
-import com.google.common.reflect.ClassPath.ResourceInfo
 import com.google.common.reflect.ClassPath
 
 import scala.collection.mutable.ArrayBuffer
 
 object ClassUtils {
   def getAllClasses(packageName:String, parent:Class[_] = null): ArrayBuffer[(String, Class[_])] = {
-    val f = classOf[sun.misc.Unsafe].getDeclaredField("theUnsafe")
-    f.setAccessible(true)
-    val unsafe = f.get(null).asInstanceOf[sun.misc.Unsafe]
-    val getClassPathEntries = classOf[ClassPath]
-      .getDeclaredMethod("getClassPathEntries", Array[Class[_]](classOf[ClassLoader]):_*)
-    getClassPathEntries.setAccessible(true)
-    val empty = unsafe.allocateInstance(classOf[ClassPath])
-    val resources = new ImmutableSortedSet.Builder[ResourceInfo](com.google.common.collect.Ordering.usingToString)
-    val imap = getClassPathEntries.invoke(empty,
-      ClassUtils.getClass.getClassLoader).asInstanceOf[ImmutableMap[URI, ClassLoader]]
-    val browse = classOf[ClassPath].getDeclaredMethod("browse",
-      Array[Class[_]](classOf[URI], classOf[ClassLoader], classOf[ImmutableSet.Builder[ResourceInfo]]):_*)
-    browse.setAccessible(true)
-    val it = imap.entrySet.iterator
-    while (it.hasNext) {
-      val next = it.next
-      util.Try(browse.invoke(empty, next.getKey, next.getValue, resources))
-    }
-    val construct = classOf[ClassPath].getDeclaredConstructor(Array[Class[_]](classOf[ImmutableSet[ResourceInfo]]):_*)
-    construct.setAccessible(true)
-    val cp = construct.newInstance(resources.build)
+    val cp = ClassPath.from(getClass.getClassLoader)
+    val is = if (packageName == null) cp.getTopLevelClasses else cp.getTopLevelClassesRecursive(packageName)
     val seq = collection.mutable.ArrayBuffer.empty[(String, Class[_])]
-    val is = cp.getTopLevelClasses
     val iterator = is.iterator
     while (iterator.hasNext) {
       val ci = iterator.next
       try {
         val clazz = ci.load
         if ((parent == null || parent.isAssignableFrom(clazz)) &&
-          (packageName == null || clazz.getPackage.getName.startsWith(packageName)) &&
           !Modifier.isAbstract(clazz.getModifiers)) seq.append((clazz.getSimpleName, clazz))
       } catch {
         case _:Throwable =>
