@@ -53,7 +53,9 @@ class Start(taskName:String, params:java.util.Map[String, AnyRef])
     val sparkConf = new SparkConf()
     enrichedParams.filter(_._1.startsWith("spark.")).foreach(kv => sparkConf.set(kv._1, kv._2))
     if (!sparkConf.contains("spark.master")) sparkConf.setMaster("local[*]")
-    val spark = SparkSession.builder.appName("Fusion-Spark").config(sparkConf).getOrCreate
+    val builder = SparkSession.builder.appName("Fusion-Spark").config(sparkConf)
+    if (enrichedParams.getOrElse("enableHiveSupport","false").equals("true")) builder.enableHiveSupport()
+    val spark = builder.getOrCreate
     params.get("udf") match {
       case udfList:String =>
         udfList.split(",").foreach(udfPackage =>
@@ -139,6 +141,7 @@ class Start(taskName:String, params:java.util.Map[String, AnyRef])
   }
 
   def getProcessorSchema:String = """{"title": "Start","type": "object","properties": {
-    "__class":{"type":"string","options":{"hidden":true},"default":"spark.Start"}
+    "__class":{"type":"string","options":{"hidden":true},"default":"spark.Start"},
+    "enableHiveSupport":{"type":"boolean","description":"enable Hive Support"}
     },"required":["__class"]}"""
 }

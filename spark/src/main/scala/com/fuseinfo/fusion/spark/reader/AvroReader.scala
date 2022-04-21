@@ -29,7 +29,7 @@ class AvroReader(taskName: String, params:util.Map[String, AnyRef])
   def this(taskName:String) = this(taskName, new util.HashMap[String, AnyRef])
 
   @transient private val logger = LoggerFactory.getLogger(this.getClass)
-  private val reservedSet = Set("path","repartition", "cache", "localCheckpoint", "viewName")
+  private val optionSet = Set("path","repartition","cache","localCheckpoint","viewName")
 
   override def apply(vars:util.Map[String, String]): String = {
     val enrichedParams = params.filter(_._2.isInstanceOf[String])
@@ -37,10 +37,7 @@ class AvroReader(taskName: String, params:util.Map[String, AnyRef])
     val path = SparkUtils.stdPath(enrichedParams("path"))
     logger.info("{} Reading AVRO from {}", taskName, path:Any)
     val spark = SparkSession.getActiveSession.getOrElse(SparkSession.getDefaultSession.get)
-    val reader = spark.read
-    enrichedParams.filterKeys{key => !reservedSet.contains(key) && !key.startsWith("__")}
-      .foreach(kv => reader.option(kv._1, kv._2))
-    val df = reader.format("avro").load(path)
+    val df = SparkUtils.getReader(spark, enrichedParams, optionSet).format("avro").load(path)
     SparkUtils.registerDataFrame(df, taskName, enrichedParams)
     s"Read Avro files from $path lazily"
   }
@@ -50,7 +47,6 @@ class AvroReader(taskName: String, params:util.Map[String, AnyRef])
     "path":{"type":"string","description":"Path of the avro files"},
     "repartition":{"type":"string","format":"number","description":"Number of partitions"},
     "cache":{"type":"string","description":"cache the DataFrame?"},
-    "localCheckpoint":{"type":"string","description":"localCheckpoint"},
     "viewName":{"type":"string","description":"View Name to be registered"}
     },"required":["__class","path"]}"""
 }

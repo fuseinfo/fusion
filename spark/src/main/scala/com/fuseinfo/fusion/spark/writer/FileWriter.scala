@@ -63,7 +63,7 @@ abstract class FileWriter(taskName:String, params:util.Map[String, AnyRef])
       val path = enrichedParams("path")
       val filePrefix = enrichedParams.getOrElse("filePrefix", taskName)
       val spark = SparkSession.getActiveSession.getOrElse(SparkSession.getDefaultSession.get)
-
+      val isObjectStorage = path.startsWith("s3a://") || path.startsWith("gs://") || path.startsWith("abfs")
       val conf = spark.sparkContext.hadoopConfiguration
       val fs = (enrichedParams.get("user"), enrichedParams.get("keytab")) match {
         case (Some(user), Some(keytab)) =>
@@ -75,7 +75,7 @@ abstract class FileWriter(taskName:String, params:util.Map[String, AnyRef])
       }
 
       val uuid = util.UUID.randomUUID.toString
-      val stagingLoc = stagingBase + "/" + uuid
+      val stagingLoc = if (isObjectStorage) path else stagingBase + "/" + uuid
       val df = enrichedParams.get("sql") match {
         case Some(sqlText) => spark.sql(sqlText)
         case None => getDataFrame(spark, enrichedParams.getOrElse("table", params("__previous")).toString)
@@ -104,26 +104,28 @@ abstract class FileWriter(taskName:String, params:util.Map[String, AnyRef])
         val lfs = iter.next
         if (lfs.getPath.getName.startsWith("part-")) files.append(lfs)
       }
-      val basePath = new Path(path)
-      scala.util.Try(fs.mkdirs(basePath))
-      //val baseDir = if (basePath.isAbsoluteAndSchemeAuthorityNull) basePath.toString
-      //else fs.getFileStatus(basePath).getPath.toUri.getPath
 
       val time = System.currentTimeMillis.toString
-      fs.deleteOnExit(stagingPath)
-      val destPath = new Path(path)
+      if (!isObjectStorage) {
+        val basePath = new Path(path)
+        scala.util.Try(fs.mkdirs(basePath))
+        //val baseDir = if (basePath.isAbsoluteAndSchemeAuthorityNull) basePath.toString
+        //else fs.getFileStatus(basePath).getPath.toUri.getPath
+        fs.deleteOnExit(stagingPath)
+        val destPath = new Path(path)
 
-      enrichedParams.get("backup") match {
-        case Some(backup) =>
-          if (files.nonEmpty && fs.isDirectory(destPath)) {
-            val backupFiles = fs.listStatus(destPath).filter(_.getPath.getName.charAt(0) != '.')
-            if (backupFiles.nonEmpty) {
-              val backupPath = new Path(backup)
-              scala.util.Try(fs.mkdirs(backupPath))
-              backupFiles.foreach(file => fs.rename(file.getPath, new Path(backupPath, file.getPath.getName)))
+        enrichedParams.get("backup") match {
+          case Some(backup) =>
+            if (files.nonEmpty && fs.isDirectory(destPath)) {
+              val backupFiles = fs.listStatus(destPath).filter(_.getPath.getName.charAt(0) != '.')
+              if (backupFiles.nonEmpty) {
+                val backupPath = new Path(backup)
+                scala.util.Try(fs.mkdirs(backupPath))
+                backupFiles.foreach(file => fs.rename(file.getPath, new Path(backupPath, file.getPath.getName)))
+              }
             }
-          }
-        case None =>
+          case None =>
+        }
       }
 
       val statsWithPath = files.map { file =>
@@ -136,9 +138,11 @@ abstract class FileWriter(taskName:String, params:util.Map[String, AnyRef])
         val destFilePath = new Path(destDirPath, destName)
         val filePartName = destFilePath.toString
         val rowCount = if (dfCount >= 0) countFile(spark, filePath.toString) else {
-          scala.util.Try(fs.mkdirs(destDirPath))
-          fs.rename(filePath, destFilePath)
-          logger.info("{} Persisted file {}", taskName, filePartName:Any)
+          if (!isObjectStorage) {
+            scala.util.Try(fs.mkdirs(destDirPath))
+            fs.rename(filePath, destFilePath)
+            logger.info("{} Persisted file {}", taskName, filePartName:Any)
+          }
           -1
         }
         (filePath, destFilePath, Map("path" -> filePartName) ++
@@ -153,10 +157,12 @@ abstract class FileWriter(taskName:String, params:util.Map[String, AnyRef])
       if (dfCount > 0) {
         val fileCount = statsWithPath.map(_._3.getOrElse("rowCount", "0").toLong).sum
         if (fileCount == dfCount) {
-          statsWithPath.foreach { t =>
-            scala.util.Try(fs.mkdirs(t._2.getParent))
-            fs.rename(t._1, t._2)
-            logger.info("{} Persisted file {} with {} record(s)", taskName, t._2.toString, t._3.getOrElse("rowCount", "0"))
+          if (!isObjectStorage) {
+            statsWithPath.foreach { t =>
+              scala.util.Try(fs.mkdirs(t._2.getParent))
+              fs.rename(t._1, t._2)
+              logger.info("{} Persisted file {} with {} record(s)", taskName, t._2.toString, t._3.getOrElse("rowCount", "0"))
+            }
           }
           successExts.foreach(ext => scala.util.Try(ext(allStats)))
           s"Persisted file with $dfCount records"
