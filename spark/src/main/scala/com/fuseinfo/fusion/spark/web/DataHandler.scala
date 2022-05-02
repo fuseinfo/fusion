@@ -66,12 +66,14 @@ class DataHandler extends FusionHandler {
             (if (remoteUser == null) "" else remoteUser + "_") + System.currentTimeMillis + ".sql")
           sql
         case "list" =>
+          response.setContentType("application/json;charset=UTF-8")
           val spark = SparkSession.getActiveSession.getOrElse(SparkSession.getDefaultSession.get)
           spark.catalog.listTables().collect().map{table =>
             val tbName = table.name.toUpperCase
             s"""<div class='row form-group'><a class='btn btn-default' role='button' href='javascript:runSQL("SELECT * FROM $tbName");'>$tbName</a></div>"""
           }.mkString
         case "load" =>
+          response.setContentType("application/json;charset=UTF-8")
           val paramMap = request.getParameterMap
           paramMap.get("sql") match {
             case Array(sql: String) =>
@@ -94,6 +96,7 @@ class DataHandler extends FusionHandler {
           }
         case "run" =>
           try {
+            response.setContentType("text/html;charset=UTF-8")
             val paramMap = request.getParameterMap
             paramMap.get("sql") match {
               case Array(sql: String) =>
@@ -116,7 +119,6 @@ class DataHandler extends FusionHandler {
             case e:Throwable =>
               e.printStackTrace()
               val msg = e.getMessage.replace('"',''').replace("\n", "\\n")
-              response.setContentType("text/html")
               s"""<html><body><script type='text/javascript'>
               alert("$msg");
             setTimeout('self.close()',100);
