@@ -49,6 +49,8 @@
         <confluent.version>6.2.0</confluent.version>
         <elasticsearch.version>7.16.2</elasticsearch.version>
         <fasterxml.jackson.version>2.12.3</fasterxml.jackson.version>
+        <log4j.version>2.17.2</log4j.version>
+        <cobol.version>2.4.10</cobol.version>
         <scalatest.version>3.0.3</scalatest.version>
     </properties>
     <repositories>

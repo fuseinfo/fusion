@@ -16,7 +16,7 @@
  */
 package com.fuseinfo.fusion.spark.util
 
-import org.apache.spark.sql.{Dataset, Row}
+import org.apache.spark.sql.{DataFrameReader, Dataset, Row, SparkSession}
 import org.apache.spark.storage.StorageLevel
 
 object SparkUtils {
@@ -26,7 +26,7 @@ object SparkUtils {
       case _ => df
     }
     val df3 = params.get("localCheckpoint") match {
-      case bool: String => try (df2.localCheckpoint(bool.toBoolean)) catch {case e:Exception => df2}
+      case bool: String => try (df2.localCheckpoint(bool.toBoolean)) catch {case _:Exception => df2}
       case _ => df2
     }
     params.get("cache") match {
@@ -35,6 +35,12 @@ object SparkUtils {
       case _ =>
     }
     df3.createOrReplaceTempView(params.getOrDefault("viewName", tableName).toString.toUpperCase)
+  }
+
+  def getReader(spark: SparkSession, params: collection.Map[String, String], reserved: Set[String]): DataFrameReader = {
+    val reader = spark.read
+    params.filterKeys{key => !reserved.contains(key) && !key.startsWith("__")}.foreach{case (k,v) => reader.option(k,v)}
+    reader
   }
 
   def stdPath(path: String): String = {
