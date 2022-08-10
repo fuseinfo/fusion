@@ -19,21 +19,21 @@ package com.fuseinfo.fusion.spark.reader
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
 import java.util
-
 import com.fuseinfo.fusion.spark.util.{AvroUtils, SparkUtils}
 import com.fuseinfo.fusion.util.VarUtils
 import com.univocity.parsers.csv.{CsvParser, CsvParserSettings}
 import org.apache.avro.Schema
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.{FileSystem, Path, PathFilter}
 import org.apache.hadoop.io.{LongWritable, Text}
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat
-import org.apache.hadoop.mapreduce.task.{JobContextImpl, TaskAttemptContextImpl}
-import org.apache.hadoop.mapreduce.{JobID, TaskAttemptID}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Row, SparkSession}
 import org.slf4j.LoggerFactory
 
+import java.io.{BufferedReader, InputStreamReader}
+import java.util.regex.Pattern
 import scala.collection.JavaConversions._
 
 class CsvReader(taskName:String, params:util.Map[String, AnyRef])
@@ -160,17 +160,31 @@ class CsvReader(taskName:String, params:util.Map[String, AnyRef])
     val parser = createParser()
     val skipLines = if (headerFlag) skip + 1 else skip
     val ts = System.currentTimeMillis()
+    val paths = if (path.indexOf('*') > 0) {
+      val slash = path.lastIndexOf("/")
+      val dir = new Path(path.substring(0, slash))
+      val fs = FileSystem.get(dir.toUri, conf)
+      val regex = Pattern.compile(path.substring(slash + 1).replaceAll("\\*", ".*"))
+      fs.listStatus(dir, new PathFilter() {
+        override def accept(path: Path): Boolean = {
+          regex.matcher(path.getName).matches()
+        }
+      }).map(_.getPath.toString).mkString(",")
+    } else path
 
     val schema = if (schemaOption.isEmpty) {
-      val conf2 = new Configuration(conf)
-      conf2.set("mapreduce.input.fileinputformat.inputdir", path)
-      val inputFormat = new TextInputFormat
-      val splits = inputFormat.getSplits(new JobContextImpl(conf2, new JobID((ts / 1000).toString, (ts % 1000).toInt)))
-      val context = new TaskAttemptContextImpl(conf2, new TaskAttemptID())
-      val reader = inputFormat.createRecordReader(splits.get(0), context)
-      reader.initialize(splits.get(0), context)
-      0 to skip foreach(_ => reader.nextKeyValue())
-      val columns = parser.parseLine(reader.getCurrentValue.toString) :+ columnNameOfCorruptRecord
+      val path = new Path(paths.split(",", 2).head)
+      val fs = FileSystem.get(path.toUri, conf)
+      val f = if (fs.isDirectory(path)) {
+        fs.listStatus(path, new PathFilter() {
+          override def accept(path: Path): Boolean = !path.getName.startsWith("_") && !path.getName.startsWith(".")
+        }).head.getPath
+      } else path
+      val br = new BufferedReader(new InputStreamReader(fs.open(f)))
+      0 until skip foreach(_ => br.readLine())
+      val line = br.readLine()
+      scala.util.Try(br.close())
+      val columns = parser.parseLine(line) :+ columnNameOfCorruptRecord
       if (headerFlag) new StructType(columns.map(field => StructField(field, DataTypes.StringType, true)))
       else StructType((columns.indices.map(i => "c" + i) :+ columnNameOfCorruptRecord)
         .map(c => StructField(c, DataTypes.StringType, true)).toArray)

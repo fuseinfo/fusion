@@ -40,7 +40,6 @@ class EsWriter(taskName:String, params:util.Map[String, AnyRef])
     val index = enrichedParams("index")
     val spark = SparkSession.getActiveSession.getOrElse(SparkSession.getDefaultSession.get)
 
-    val tableName = enrichedParams.getOrElse("table", params("__previous")).toString
     val df = enrichedParams.get("sql") match {
       case Some(sqlText) => spark.sql(sqlText)
       case None => spark.sqlContext.table(enrichedParams.getOrElse("table", params("__previous")).toString)
@@ -77,6 +76,7 @@ class EsWriter(taskName:String, params:util.Map[String, AnyRef])
     "sql":{"type":"string","format":"sql","description":"Spark SQL statement",
       "options":{"ace":{"useSoftTabs":true,"maxLines":16}}},
     "table":{"type":"string","description":"Table name"},
+    "mode":{"type":"string","description":"Save mode"},
     "es.nodes":{"type":"string","description":"Elasticsearch nodes"},
     "es.port":{"type":"string","description":"Elasticsearch port"},
     "es.net.ssl":{"type":"string","description":"Use SSL"},
