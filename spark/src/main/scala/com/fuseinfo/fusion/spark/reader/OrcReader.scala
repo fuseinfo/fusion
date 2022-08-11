@@ -50,7 +50,7 @@ class OrcReader(taskName:String, params:util.Map[String, AnyRef])
         reader.orc(path)
     }
     SparkUtils.registerDataFrame(df, taskName, enrichedParams)
-    s"Read Orc files from $path lazily"
+    s"Read Orc files to $taskName lazily"
   }
 
   def getProcessorSchema:String = """{"title": "OrcReader","type": "object","properties": {
@@ -60,5 +60,5 @@ class OrcReader(taskName:String, params:util.Map[String, AnyRef])
     "repartition":{"type":"string","format":"number","description":"Number of partitions"},
     "cache":{"type":"string","description":"cache the DataFrame?"},
     "viewName":{"type":"string","description":"View Name to be registered"}
-    },"required":["__class","path"]}"""
+    },"required":["__class"]}"""
 }

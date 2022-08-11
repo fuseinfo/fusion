@@ -30,7 +30,7 @@ class JsonReader(taskName:String, params:util.Map[String, AnyRef])
         reader.json(path)
     }
     SparkUtils.registerDataFrame(df, taskName, enrichedParams)
-    s"Read JSON files from $path lazily"
+    s"Read JSON files to $taskName lazily"
   }
 
   def getProcessorSchema:String = """{"title": "JsonReader","type": "object","properties": {
@@ -40,5 +40,5 @@ class JsonReader(taskName:String, params:util.Map[String, AnyRef])
     "repartition":{"type":"integer","description":"Number of partitions"},
     "cache":{"type":"string","description":"cache to memory"},
     "viewName":{"type":"string","description":"View Name to be registered"}
-    },"required":["__class","path"]}"""
+    },"required":["__class"]}"""
 }
