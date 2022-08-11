@@ -39,15 +39,24 @@ class OrcReader(taskName:String, params:util.Map[String, AnyRef])
       .mapValues(v => VarUtils.enrichString(v.toString, vars))
     val path = SparkUtils.stdPath(enrichedParams("path"))
     val spark=SparkSession.getActiveSession.getOrElse(SparkSession.getDefaultSession.get)
-    logger.info("{} Reading ORC file from {}", taskName, path:Any)
-    val df = SparkUtils.getReader(spark, enrichedParams, optionSet).orc(path)
+    val reader = SparkUtils.getReader(spark, enrichedParams, optionSet)
+    val df = enrichedParams.get("paths") match {
+      case Some(paths) =>
+        logger.info("{} Reading ORC file from {}", taskName, paths: Any)
+        reader.orc(paths.split(";").map(_.trim): _*)
+      case None =>
+        val path = SparkUtils.stdPath(enrichedParams("path"))
+        logger.info("{} Reading ORC file from {}", taskName, path: Any)
+        reader.orc(path)
+    }
     SparkUtils.registerDataFrame(df, taskName, enrichedParams)
     s"Read Orc files from $path lazily"
   }
 
   def getProcessorSchema:String = """{"title": "OrcReader","type": "object","properties": {
     "__class":{"type":"string","options":{"hidden":true},"default":"spark.reader.OrcReader"},
-    "path":{"type":"string","description":"Path of the orc files"},
+    "path":{"type":"string","description":"Path of the ORC files"},
+    "paths":{"type":"string","description":"List of paths of the ORC files, delimited by semicolon"},
     "repartition":{"type":"string","format":"number","description":"Number of partitions"},
     "cache":{"type":"string","description":"cache the DataFrame?"},
     "viewName":{"type":"string","description":"View Name to be registered"}

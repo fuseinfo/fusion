@@ -36,19 +36,27 @@ class ParquetReader(taskName:String, params:util.Map[String, AnyRef])
   override def apply(vars:util.Map[String, String]): String = {
     val enrichedParams = params.filter(_._2.isInstanceOf[String])
       .mapValues(v => VarUtils.enrichString(v.toString, vars))
-    val path = SparkUtils.stdPath(enrichedParams("path"))
     val spark = SparkSession.getActiveSession.getOrElse(SparkSession.getDefaultSession.get)
-    logger.info("{} Reading Parquet file from {}", taskName, path:Any)
-    val df = SparkUtils.getReader(spark, enrichedParams, optionSet).parquet(path)
+    val reader = SparkUtils.getReader(spark, enrichedParams, optionSet)
+    val df = enrichedParams.get("paths") match {
+      case Some(paths) =>
+        logger.info("{} Reading Parquet file from {}", taskName, paths:Any)
+        reader.parquet(paths.split(";").map(_.trim):_*)
+      case None =>
+        val path = SparkUtils.stdPath(enrichedParams("path"))
+        logger.info("{} Reading Parquet file from {}", taskName, path:Any)
+        reader.parquet(path)
+    }
     SparkUtils.registerDataFrame(df, taskName, enrichedParams)
-    s"Read Parquet files from $path lazily"
+    s"Read Parquet files to $taskName lazily"
   }
 
   def getProcessorSchema:String = """{"title": "ParquetReader","type": "object","properties": {
     "__class":{"type":"string","options":{"hidden":true},"default":"spark.reader.ParquetReader"},
     "path":{"type":"string","description":"Path of the Parquet files"},
+    "paths":{"type":"string","description":"List of paths of the Parquet files, delimited by semicolon"},
     "repartition":{"type":"integer","description":"Number of partitions"},
     "cache":{"type":"string","description":"cache to memory"},
     "viewName":{"type":"string","description":"View Name to be registered"}
-    },"required":["__class","path"]}"""
+    },"required":["__class"]}"""
 }
