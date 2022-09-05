@@ -1,0 +1,74 @@
+package com.fuseinfo.fusion.spark.writer
+
+import com.fuseinfo.fusion.util.{ClassUtils, VarUtils}
+import java.util
+import org.apache.spark.sql.SparkSession
+import org.slf4j.LoggerFactory
+import scala.collection.JavaConversions._
+
+class HiveWriter(taskName:String, params:util.Map[String, AnyRef])
+  extends (util.Map[String, String] => String) with Serializable  {
+  def this(taskName: String) = this(taskName, new util.HashMap[String, AnyRef])
+
+  @transient private val logger = LoggerFactory.getLogger(this.getClass)
+  @transient lazy val extensions: Map[String, Array[util.Map[String, String]]] = params
+    .filter(_._2.isInstanceOf[Array[_]]).toMap.asInstanceOf[Map[String, Array[util.Map[String, String]]]]
+
+  override def apply(vars: util.Map[String, String]): String = {
+    val successExts = extensions.getOrElse("onSuccess", Array.empty).map { props =>
+      try {
+        ClassUtils.newExtension(props("__class"), props.toMap.filter(_._1 != "__class"))
+      } catch {
+        case e: Exception =>
+          logger.warn("{} Unable to create an onSuccess extension", taskName, e: Any)
+          null
+      }
+    }.filter(_ != null)
+    val failureExts = extensions.getOrElse("onFailure", Array.empty).map { props =>
+      try {
+        ClassUtils.newExtension(props("__class"), props.toMap.filter(_._1 != "__class"))
+      } catch {
+        case e: Exception =>
+          logger.warn("{} Unable to create an onFailure extension", taskName, e: Any)
+          null
+      }
+    }.filter(_ != null)
+    val enrichedParams = params.filter(_._2.isInstanceOf[String])
+      .mapValues(v => VarUtils.enrichString(v.toString, vars))
+
+    val tableName = enrichedParams("tableName")
+    val spark = SparkSession.getActiveSession.getOrElse(SparkSession.getDefaultSession.get)
+
+    val df = enrichedParams.get("sql") match {
+      case Some(sqlText) => spark.sql(sqlText)
+      case None => spark.sqlContext.table(enrichedParams.getOrElse("table", params("__previous")).toString)
+    }
+
+    val writer = df.write
+    enrichedParams.get("mode").foreach(writer.mode)
+    try {
+      writer.saveAsTable(tableName)
+      val stats = enrichedParams
+      successExts.foreach(ext => scala.util.Try(ext(stats)))
+      s"Persisted data to Hive $tableName"
+    } catch {
+      case e: Throwable =>
+        failureExts.foreach(ext => scala.util.Try(ext(Map("error" -> e.getMessage))))
+        throw new RuntimeException(taskName + ": Failed to persist output", e)
+    }
+  }
+
+  def getProcessorSchema: String =
+    """{"title": "HiveWriter","type":"object","properties": {
+    "__class":{"type":"string","options":{"hidden":true},"default":"spark.writer.HiveWriter"},
+    "tableName":{"type":"string","description":"The name of the Hive table"},
+    "sql":{"type":"string","format":"sql","description":"Spark SQL statement",
+      "options":{"ace":{"useSoftTabs":true,"maxLines":16}}},
+    "table":{"type":"string","description":"Table name"},
+    "mode":{"type":"string","description":"Save mode"},
+    "onSuccess":{"type":"array","format":"tabs","description":"extension after success",
+      "items":{"type":"object","properties":{"__class":{"type":"string"}}}},
+    "onFailure":{"type":"array","format":"tabs","description":"extension after failure",
+      "items":{"type":"object","properties":{"__class":{"type":"string"}}}}
+    },"required":["__class","tableName"]}"""
+}

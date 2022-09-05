@@ -191,7 +191,7 @@ class CsvReader(taskName:String, params:util.Map[String, AnyRef])
     } else schemaOption.get
 
     val rdd = spark.sparkContext
-      .newAPIHadoopFile(path, classOf[TextInputFormat], classOf[LongWritable], classOf[Text], conf)
+      .newAPIHadoopFile(paths, classOf[TextInputFormat], classOf[LongWritable], classOf[Text], conf)
       .mapPartitionsWithIndex{case (idx, iter) => if (idx == 0) iter.drop(skipLines) else iter}
       .mapPartitions{iter =>
         val parser = createParser()

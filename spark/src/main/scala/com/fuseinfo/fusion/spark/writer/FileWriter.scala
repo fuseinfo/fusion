@@ -18,7 +18,6 @@ package com.fuseinfo.fusion.spark.writer
 
 import java.security.PrivilegedAction
 import java.util
-
 import com.fuseinfo.fusion.util.{ClassUtils, VarUtils}
 import org.apache.hadoop.fs.{FileSystem, LocatedFileStatus, Path}
 import org.apache.hadoop.security.UserGroupInformation
@@ -26,6 +25,7 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.functions._
 import org.slf4j.LoggerFactory
 
+import java.net.URI
 import scala.collection.JavaConversions._
 
 abstract class FileWriter(taskName:String, params:util.Map[String, AnyRef])
@@ -64,18 +64,20 @@ abstract class FileWriter(taskName:String, params:util.Map[String, AnyRef])
       val filePrefix = enrichedParams.getOrElse("filePrefix", taskName)
       val spark = SparkSession.getActiveSession.getOrElse(SparkSession.getDefaultSession.get)
       val isObjectStorage = path.startsWith("s3a://") || path.startsWith("gs://") || path.startsWith("abfs")
+      val uuid = util.UUID.randomUUID.toString
+      val stagingLoc = if (isObjectStorage) path else stagingBase + "/" + uuid
+      val stagingUri = new URI(stagingLoc)
+
       val conf = spark.sparkContext.hadoopConfiguration
       val fs = (enrichedParams.get("user"), enrichedParams.get("keytab")) match {
         case (Some(user), Some(keytab)) =>
           UserGroupInformation.loginUserFromKeytabAndReturnUGI(user, keytab)
             .doAs(new PrivilegedAction[FileSystem]() {
-              override def run(): FileSystem = FileSystem.get(conf)
+              override def run(): FileSystem = FileSystem.get(stagingUri, conf)
             })
-        case _ => FileSystem.get(conf)
+        case _ => FileSystem.get(stagingUri, conf)
       }
 
-      val uuid = util.UUID.randomUUID.toString
-      val stagingLoc = if (isObjectStorage) path else stagingBase + "/" + uuid
       val df = enrichedParams.get("sql") match {
         case Some(sqlText) => spark.sql(sqlText)
         case None => getDataFrame(spark, enrichedParams.getOrElse("table", params("__previous")).toString)
@@ -94,6 +96,7 @@ abstract class FileWriter(taskName:String, params:util.Map[String, AnyRef])
             }
         }).write
       }
+      enrichedParams.get("mode").foreach(writer.mode)
       applyWriter(writer, stagingLoc)
       val dfCount = if (verifyCounts) df.count else -1
 
