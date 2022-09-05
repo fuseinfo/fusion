@@ -24,6 +24,7 @@ class JsonWriter(taskName:String, params:java.util.Map[String, AnyRef]) extends 
     "sql":{"type":"string","format":"sql","description":"Spark SQL statement",
       "options":{"ace":{"useSoftTabs":true,"maxLines":16}}},
     "table":{"type":"string","description":"Table name"},
+    "mode":{"type":"string","description":"Save mode"},
     "partitionBy":{"type":"string","description":"Partition by"},
     "verifyCounts":{"type":"boolean","description":"Verify counts?"},
     "user":{"type":"string","description":"Run as a different user"},

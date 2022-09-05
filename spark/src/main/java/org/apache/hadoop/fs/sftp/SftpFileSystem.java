@@ -26,6 +26,7 @@ import org.apache.hadoop.util.Progressable;
 
 import java.io.*;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -233,7 +234,7 @@ public class SftpFileSystem extends FileSystem {
                         is = new FileInputStream(identityFile);
                     } else {
                         Path prvPath = new Path(identityPath);
-                        FileSystem fs = FileSystem.get(conf);
+                        FileSystem fs = FileSystem.get(new URI(identityPath), conf);
                         is = fs.open(prvPath);
                     }
                 }
@@ -259,7 +260,7 @@ public class SftpFileSystem extends FileSystem {
             channel.connect(10000);
             homeDir = new Path(channel.pwd());
             return channel;
-        } catch (JSchException | SftpException | IOException e) {
+        } catch (JSchException | SftpException | IOException | URISyntaxException e) {
             throw new IOException("Login failed on server " + host, e);
         }
     }

@@ -43,6 +43,7 @@ class CsvWriter(taskName:String, params:java.util.Map[String, AnyRef]) extends F
     "sql":{"type":"string","format":"sql","description":"Spark SQL statement",
       "options":{"ace":{"useSoftTabs":true,"maxLines":16}}},
     "table":{"type":"string","description":"Table name"},
+    "mode":{"type":"string","description":"Save mode"},
     "header":{"type":"string","description":"header"},
     "delimiter":{"type":"string","description":"Delimiter"},
     "quote":{"type":"string","description":"Quote character"},
