@@ -151,7 +151,7 @@ abstract class FileWriter(taskName:String, params:util.Map[String, AnyRef])
         (filePath, destFilePath, Map("path" -> filePartName) ++
           (if (rowCount < 0) Map.empty[String, String] else Map("rowCount" -> rowCount.toString)))
       }
-      val stats = enrichedParams ++ statsWithPath.zipWithIndex.flatMap{stats =>
+      val stats = vars ++ enrichedParams ++ statsWithPath.zipWithIndex.flatMap{stats =>
         val idx = "." + stats._2
         stats._1._3.map(kv => (kv._1 + idx) -> kv._2)
       }

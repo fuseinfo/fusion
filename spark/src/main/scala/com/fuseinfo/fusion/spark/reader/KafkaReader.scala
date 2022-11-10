@@ -48,6 +48,8 @@ class KafkaReader(taskName:String, params:util.Map[String, AnyRef])
     enrichedParams.filter(_._1.startsWith("kafka.")).foreach(kv => kafkaParams.put(kv._1.substring(6), kv._2))
     kafkaParams.put("key.deserializer","org.apache.kafka.common.serialization.ByteArrayDeserializer")
     kafkaParams.put("value.deserializer","org.apache.kafka.common.serialization.ByteArrayDeserializer")
+    kafkaParams.put("enable.auto.commit", "false")
+    kafkaParams.put("auto.offset.reset", "earliest")
     val topic = enrichedParams("topic")
     val subject = topic + "-value"
     val schemaStr = params.get("schema")
@@ -69,37 +71,36 @@ class KafkaReader(taskName:String, params:util.Map[String, AnyRef])
             range.substring(bgnIdx + 1, endIdx).toLong, range.substring(endIdx + 1).toLong)
         }
       case None =>
-        val clientParams = kafkaParams.clone.asInstanceOf[util.HashMap[String, AnyRef]]
-        clientParams.put("enable.auto.commit", "false")
-        clientParams.put("auto.offset.reset", "earliest")
-        clientParams.put("group.id", "spark-executor-" + kafkaParams.get("group.id"))
-        val consumer = new KafkaConsumer[Array[Byte], Array[Byte]](clientParams)
+        val consumer = new KafkaConsumer[Array[Byte], Array[Byte]](kafkaParams)
         consumer.subscribe(util.Arrays.asList(topic))
         consumer.poll(0)
         val topicParts = consumer.assignment
-        consumer.seekToBeginning(topicParts)
         val beginMap = topicParts.map(tp => tp.partition -> consumer.position(tp)).toMap
         consumer.seekToEnd(topicParts)
         val endMap = topicParts.map(tp => tp.partition -> consumer.position(tp)).toMap
+        val maxSize = enrichedParams.getOrElse("maxSize", "2147483647").toInt
         enrichedParams.get("offsets") match {
           case Some(offsets) =>
             val ranges = offsets.split(";").map{offset =>
               val idx = offset.indexOf(':')
               val part = offset.substring(0, idx).toInt
               val bgn = offset.substring(idx + 1).toLong
-              OffsetRange.create(topic, part, bgn, endMap.getOrElse(part, bgn))
+              OffsetRange.create(topic, part, bgn, Math.min(bgn + maxSize, endMap.getOrElse(part, bgn)))
             }
             consumer.close()
             ranges
           case None =>
             val ranges = topicParts.map{tp =>
               val part = tp.partition
-              OffsetRange.create(topic, part, beginMap(part), endMap(part))
+              val bgn = beginMap(part)
+              OffsetRange.create(topic, part, bgn, Math.min(bgn + maxSize, endMap(part)))
             }.toArray
             consumer.close()
             ranges
         }
     }
+    vars.put(taskName + "_KAFKA_RANGES",
+      offsetRanges.map(range => range.partition + ":" + range.fromOffset + "-" + range.untilOffset).mkString(";"))
     logger.info("{} reading from topic {}", taskName, topic:Any)
     offsetRanges.foreach(range => logger.info(range.toString))
     val rdd = KafkaUtils.createRDD[Array[Byte], Array[Byte]](spark.sparkContext, kafkaParams,
