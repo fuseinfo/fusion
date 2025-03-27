@@ -21,7 +21,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.fuseinfo.fusion</groupId>
     <artifactId>fusion-parent_2.12</artifactId>
-    <version>0.3.2</version>
+    <version>0.3.3</version>
     <packaging>pom</packaging>
     <name>Fusion Project Parent POM</name>
     <url>http://www.fuseinfo.com/</url>
@@ -43,15 +43,15 @@
         <encoding>UTF-8</encoding>
         <scala.version>2.12.15</scala.version>
         <scala.compat.version>2.12</scala.compat.version>
-        <spark.version>3.2.0</spark.version>
-        <hadoop.version>3.3.1</hadoop.version>
-        <kafka.version>3.0.0</kafka.version>
-        <confluent.version>6.2.0</confluent.version>
-        <elasticsearch.version>7.16.2</elasticsearch.version>
-        <fasterxml.jackson.version>2.12.3</fasterxml.jackson.version>
+        <spark.version>3.3.4</spark.version>
+        <hadoop.version>3.3.2</hadoop.version>
+        <kafka.version>3.6.2</kafka.version>
+        <confluent.version>7.6.2</confluent.version>
+        <elasticsearch.version>8.13.4</elasticsearch.version>
+        <fasterxml.jackson.version>2.13.4</fasterxml.jackson.version>
         <log4j.version>2.17.2</log4j.version>
-        <cobol.version>2.4.10</cobol.version>
-        <scalatest.version>3.0.3</scalatest.version>
+        <cobol.version>2.6.8</cobol.version>
+        <scalatest.version>3.1.4</scalatest.version>
     </properties>
     <repositories>
         <repository>
